@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+  <head>
+      <meta charset="utf-8"/>
+      <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+      <title></title>
+      <meta name="description" content=""/>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0"/>
+
+      <style type="text/css" media="screen">
+        .entry-frame {
+          margin: 10px 0 0 10px;
+          display: inline-block;
+          text-align: left;
+          width: 130px;
+          background: #fff;
+          border: 1px solid rgba(169,169,169,.6);
+          -moz-box-shadow: 0 2px 5px rgba(0,0,0,.32);
+          -webkit-box-shadow: 0 2px 5px rgba(0,0,0,.32);
+          box-shadow: 0 2px 5px rgba(0,0,0,.32);
+        }
+
+
+        .header {
+          position: absolute;
+          top: 0;
+          height: 25px;
+          left: 0;
+          width: 100%;
+          background-color: #aaa;
+          text-align: center;
+          line-height: 25px;
+        }  
+
+        .content {
+          position: absolute;
+          top: 25px;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          background-color: #999;
+        }
+
+        .mScroll {
+          width: 100%;
+          height: 100%;
+
+          /** Need to have */
+          overflow: hidden;
+          position: relative;
+        } 
+
+        .mScrollPage {
+          width: 100%;
+          height: 100%;
+
+          /**
+           * Box sizing.
+           * http://caniuse.com/#search=box-sizing
+           * http://paulirish.com/2012/box-sizing-border-box-ftw/
+           * http://www.w3.org/TR/css3-ui/#box-sizing
+           */
+          -webkit-box-sizing: border-box;
+          -moz-box-sizing: border-box;
+          box-sizing: border-box;
+
+          /** Need to have */
+          position: absolute;
+          top: 0;
+          left: 0;
+        } 
+
+        /*
+        .mScrollPage:nth-child(odd) {
+          background-color: #eee;
+        }
+        */
+
+        .mGrid {
+          /** Need to be */
+          position: relative;
+          width: 100%;
+        }
+        .mGrid > div {
+          /** Need to be */
+          position: absolute;
+          top: 0;
+          left: 0;
+        }
+
+        img {
+          display: block;
+        }
+      </style>
+  </head>
+  <body>
+    <div class="header">
+      <a class="menu-item">1</a>
+      <a class="menu-item">2</a>
+      <a class="menu-item">3</a>
+      <a class="menu-item">4</a>
+    </div>
+    <div class="content">
+      <div class="mScroll">
+        <div class="mScrollPage">
+          <div class="mGrid">
+            <div class="entry-frame"><img src="imgs/1.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/2.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/3.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/4.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/5.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/6.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/7.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/8.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/9.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/10.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/11.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/12.jpeg" width="100%" alt="adgg" /></div>
+          </div>
+        </div>
+        <div class="mScrollPage">
+          <div class="mGrid">
+            <div class="entry-frame"><img src="imgs/1.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/2.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/3.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/4.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/5.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/6.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/7.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/8.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/9.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/10.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/11.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/12.jpeg" width="100%" alt="adgg" /></div>
+          </div>
+        </div>
+        <div class="mScrollPage">
+          <div class="mGrid">
+            <div class="entry-frame"><img src="imgs/1.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/2.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/3.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/4.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/5.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/6.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/7.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/8.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/9.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/10.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/11.jpeg" width="100%" alt="adgg" /></div>
+            <div class="entry-frame"><img src="imgs/12.jpeg" width="100%" alt="adgg" /></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script type="text/javascript" charset="utf-8" src="mScroll.js"></script>
+    <script type="text/javascript" charset="utf-8" src="mGrid.js"></script>
+    <script type="text/javascript" charset="utf-8">
+      var grid1 = new mGrid(document.getElementsByClassName('mGrid')[0], { });
+      var grid2 = new mGrid(document.getElementsByClassName('mGrid')[1], { });
+      var grid3 = new mGrid(document.getElementsByClassName('mGrid')[2], { });
+      var scroll = new mScroll(document.getElementsByClassName('mScroll')[0], { }); 
+      var header = document.getElementsByClassName('header')[0];
+      header.onclick = function (event) {
+        if (event.target.className === "menu-item") {
+          scroll.scrollToPage(event.target.innerHTML);
+        }
+      };
+    </script>
+  </body>
+</html>
