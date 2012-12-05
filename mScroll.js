@@ -87,8 +87,13 @@
   mScroll.prototype.momentumThreshold = 1000; //ms
   mScroll.prototype.snap = true;
   mScroll.prototype.currentPageNo = 0;
+  mScroll.prototype.animating = false;
 
   mScroll.prototype.animate = function () {
+    if (this.animating) {
+      return;
+    }
+    this.animating = true;
     var that = this;
     var prev = Date.now();
     var start = prev;
@@ -103,6 +108,7 @@
         prev = timestamp;
         if (Math.abs(that.velocityX) < 0.01) {
           cancelAnimationFrame(id);
+          that.animating = false;
           console.log('animation end ' + (prev - start) / 1000);
         }
     })();
@@ -190,8 +196,6 @@
     var velocityXMax = 2;
     var duration = (event.timeStamp || Date.now()) - this.touchStartTimeStamp;
     var velocityX = (this.touchEndX - this.touchStartX) / duration;
-
-    console.log(velocityX);
 
     if (velocityX < 0) {
       velocityX = Math.max(velocityX, -velocityXMax);

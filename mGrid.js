@@ -31,10 +31,16 @@
     this.rootElementWidth = rootElement.offsetWidth;
     this.rootElementHeight = rootElement.offsetHeight;
 
-    // For support plz see http://caniuse.com/#search=querySelectorAll
     this.childs = rootElement.children; 
 
     this.layout();
+
+    // For support plz see http://caniuse.com/#search=querySelectorAll
+    var images = rootElement.querySelectorAll('img');
+    for (var i = 0, leni = images.length; i < leni; ++i) {
+      images[i].onload = this.onResize.bind(this);
+      images[i].onerror = this.onResize.bind(this);
+    }
 
     window.addEventListener('resize', this.onResize.bind(this), false);
   };
