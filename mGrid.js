@@ -1,7 +1,7 @@
 
 // FIXME: Add this below
 // Updated to use a modification of the "returnExportsGlobal" pattern from https://github.com/umdjs/umd
-(function (window, doc, undefined) {
+(function (window, document, undefined) {
   'use strict';
   /**
    * Polyfills

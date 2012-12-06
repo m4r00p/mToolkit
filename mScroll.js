@@ -1,6 +1,6 @@
 // FIXME: Add this below
 // Updated to use a modification of the "returnExportsGlobal" pattern from https://github.com/umdjs/umd
-(function (window, doc, undefined) {
+(function (window, documentG, undefined) {
   'use strict';
   /**
    * Polyfills
@@ -93,6 +93,7 @@
     if (this.animating) {
       return;
     }
+    this.freezed = false;
     this.animating = true;
     var that = this;
     var prev = Date.now();
@@ -104,9 +105,10 @@
     (function loop(){
         timestamp = Date.now();
         id = requestAnimationFrame(loop);
-        that.render(timestamp - prev);
+        that.integrate(timestamp - prev);
+        that.render();
         prev = timestamp;
-        if (Math.abs(that.velocityX) < 0.01) {
+        if (that.freezed) {
           cancelAnimationFrame(id);
           that.animating = false;
           console.log('animation end ' + (prev - start) / 1000);
@@ -114,54 +116,64 @@
     })();
   };
 
-  mScroll.prototype.render = function (dt) {
-    var i = 0;
-    var pages = this.pageElements;
-    var size = pages.length;
-    var page = null;
+  mScroll.prototype.integrate = function (dt) {
+    /*
     var acceleration = 0.98;
-
     this.velocityX *= acceleration;
-
+    var x = this.velocityX * dt;
+    */
+    //this.distanceX 
     var x = this.velocityX * dt;
 
-    for (; i < size; ++i) {
+    this.distanceX -= x;
+
+    var pages = this.pageElements;
+    for (var i = 0, leni = pages.length, page; i < leni; ++i) {
       page = pages[i];
       page.x += x;
+    }
+
+    if (Math.abs(this.distanceX) < 1) {
+      this.freezed = true;
+    }
+  };
+
+  mScroll.prototype.render = function () {
+    var pages = this.pageElements;
+    var page = null;
+
+    for (var i = 0, leni = pages.length; i < leni; ++i) {
+      page = pages[i];
       page.style['-webkit-transform'] = tranlateMatrix(page.x);
     }
   };
 
   mScroll.prototype.layout = function () {
-    var i = 0;
     var pages = this.pageElements;
-    var size = pages.length;
-    var page = null;
     var rootWidth = this.rootElementWidth;
 
-    for (; i < size; ++i) {
-      page = pages[i];
-      page.x = i * rootWidth;
-      page.style['-webkit-transform'] = tranlateMatrix(page.x);
-    }  
+    for (var i = 0, leni = pages.length; i < leni; ++i) {
+      pages[i].x = i * rootWidth;
+    }
+
+    this.render();
   };
 
   mScroll.prototype.scrollToPage = function (number) {
     number -= 1; // Page are counted from 0
-    this.moveAll(-number * this.rootElementWidth);
+    //this.moveAll(-number * this.rootElementWidth);
   };
 
-  mScroll.prototype.moveAll = function (deltaX) {
-    var i = 0;
+  mScroll.prototype.scrollTo = function (x) {
     var pages = this.pageElements;
-    var size = pages.length;
     var page = null;
 
-    for (; i < size; ++i) {
+    for (var i = 0, leni = pages.length; i < leni; ++i) {
       page = pages[i];
-      page.x += deltaX;
-      page.style['-webkit-transform'] = tranlateMatrix(page.x); 
+      page.x += x;
     }  
+
+    this.render();
   };
 
   mScroll.prototype.onTouchStart = function (event) {
@@ -169,9 +181,7 @@
 
     if (touches.length == 1) {
       touch = touches[0];
-      this.touchEndY = this.touchStartY = touch.pageY;
-      this.touchEndX = this.touchStartX = touch.pageX;
-
+      this.touchStart = this.touchEnd = [touch.pageX, touch.pageY];
       this.touchStartTimeStamp = event.timeStamp || Date.now();
     }
   };
@@ -182,17 +192,17 @@
     if (touches.length == 1) {
       touch = touches[0];
       
-      this.touchMoveX = touch.pageX;
-      this.touchMoveY = touch.pageY;
-
-      this.moveAll(this.touchMoveX - this.touchEndX);
-      this.touchEndX = this.touchMoveX; 
+      this.touchMove = [touch.pageX, touch.pageY];
+      this.scrollTo(this.touchMove[0] - this.touchEnd[0]);
+      this.touchEnd = this.touchMove;
     }
 
     event.preventDefault();
   };
 
   mScroll.prototype.onTouchEnd = function (event) {
+    
+    /*
     var velocityXMax = 2;
     var duration = (event.timeStamp || Date.now()) - this.touchStartTimeStamp;
     var velocityX = (this.touchEndX - this.touchStartX) / duration;
@@ -207,6 +217,29 @@
       this.velocityX = velocityX;
       this.animate();
     }
+    */
+   /*
+   var snapThreshold = 0.2;
+   var pageNo = -Math.round(this.position[0] / this.rootElementWidth);
+   var touchDistanceX = this.touchEnd[0] - this.touchStart[0];
+   var direction = 1;
+
+   if (Math.abs(touchDistanceX) > this.rootElementWidth * snapThreshold) {
+     if (touchDistanceX > 0) {
+       direction = -1;
+     }
+
+     pageNo = pageNo + 1 * direction;
+   } 
+
+
+   var duration = 300;
+   this.distanceX = (-pageNo * this.rootElementWidth) - this.position[0];
+   this.velocityX = this.distanceX / duration;
+    
+   console.log(pageNo, (-pageNo * this.rootElementWidth), this.position[0], this.distanceX, this.velocityX);
+   this.animate();
+   */
   };
 
 
