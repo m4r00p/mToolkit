@@ -80,7 +80,19 @@
     // For support plz see http://caniuse.com/#search=querySelectorAll
     this.pageElements = rootElement.querySelectorAll('.mScrollPage');
 
-    this.layout();
+    this.particle = new mPhysics.Particle();
+    this.particle.position = mPhysics.vec3.create([0, 0, 0]);
+    //this.particle.velocity = mPhysics.vec3.create([1, 0, 0]);
+    //this.particle.velocity = mPhysics.vec3.create([0.3, 0, 0]); 
+    //this.particle.acceleration = mPhysics.vec3.create([-0.0001, 0, 0]); 
+    this.forceRegistry = new mPhysics.ParticleForceRegistry();
+    //this.forceRegistry.add(this.particle, new mPhysics.ParticleGravity([0.1, 0, 0]));
+    //this.forceRegistry.add(this.particle, new mPhysics.ParticleAnchoredBungee([100, 0, 0], 0.1, 40));
+    //this.forceRegistry.add(this.particle, new mPhysics.ParticleAnchoredSpring([0, 50, 0], 0.1, 40));
+    this.forceRegistry.add(this.particle, new mPhysics.ParticleAnchoredFakeSpring([100, 0, 0], 0.1, 0.5));
+
+    //this.layout();
+    this.animate();
     this.addEventListeners();
   };
 
@@ -100,19 +112,22 @@
     var start = prev;
     var timestamp = prev;
     var id = null;
-
+    var duration = null;
     console.log('animation start');
+    var i = 6000;
     (function loop(){
-        timestamp = Date.now();
-        id = requestAnimationFrame(loop);
-        that.integrate(timestamp - prev);
-        that.render();
-        prev = timestamp;
-        if (that.freezed) {
-          cancelAnimationFrame(id);
-          that.animating = false;
-          console.log('animation end ' + (prev - start) / 1000);
-        }
+      id = requestAnimationFrame(loop);
+      timestamp = Date.now();
+      duration = (timestamp - prev) / 100; 
+      that.forceRegistry.updateForces(duration);
+      that.particle.integrate(duration);
+      that.render();
+      prev = timestamp;
+      //if (--i < 0) {
+        //cancelAnimationFrame(id);
+        //that.animating = false;
+        //console.log('animation end ' + (prev - start) / 1000);
+      //}
     })();
   };
 
@@ -139,6 +154,10 @@
   };
 
   mScroll.prototype.render = function () {
+
+    var position = this.particle.position;
+    this.pageElements[0].style['-webkit-transform'] = tranlateMatrix(position[0], position[1], position[2]);
+    /*
     var pages = this.pageElements;
     var page = null;
 
@@ -146,6 +165,7 @@
       page = pages[i];
       page.style['-webkit-transform'] = tranlateMatrix(page.x);
     }
+    */
   };
 
   mScroll.prototype.layout = function () {
@@ -193,7 +213,7 @@
       touch = touches[0];
       
       this.touchMove = [touch.pageX, touch.pageY];
-      this.scrollTo(this.touchMove[0] - this.touchEnd[0]);
+      //this.scrollTo(this.touchMove[0] - this.touchEnd[0]);
       this.touchEnd = this.touchMove;
     }
 
