@@ -6,7 +6,6 @@
    * Polyfills
    */
 
-  
   if (!Function.prototype.bind) {
     Function.prototype.bind = function (ctx) {
       var that  = this;
@@ -17,7 +16,6 @@
       };
     };
   }
- 
 
   /**
    * pollyfill for requestAnimationFrame
@@ -29,7 +27,6 @@
    * fixes from Paul Irish and Tino Zijdel
    */
 
-  
   (function() {
     var lastTime = 0;
     var vendors = ['ms', 'moz', 'webkit', 'o', ''];
@@ -54,7 +51,7 @@
       clearTimeout(id);
     };
   }());
-  
+
   /**
    * Helpers
    */
@@ -68,9 +65,6 @@
 
     return 'matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0,  1, 0, ' + tx.toFixed(1) + ', ' + ty.toFixed(1) + ', ' + tz.toFixed(1) + ', 1)';
   };
-
-
-  var ZERO_EPSILON = 0.5;
 
   /**
    * Main mScroll code
@@ -126,7 +120,6 @@
        page.position = [0, 0, 0];
       }
       page.position = [parseInt(i* rootWidth - (pageNo * rootWidth), 10), parseInt(page.position[1], 10), 0];
-      //console.log('layout: ', page.position);
     }
 
     this.render();
