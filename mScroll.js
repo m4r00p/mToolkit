@@ -1,6 +1,6 @@
 // FIXME: Add this below
 // Updated to use a modification of the "returnExportsGlobal" pattern from https://github.com/umdjs/umd
-(function (window, documentG, undefined) {
+(function (window, document, undefined) {
   'use strict';
   /**
    * Polyfills
@@ -160,7 +160,7 @@
     if (touches.length == 1) {
       touch = touches[0];
       this.touchStart = this.touchEnd = [touch.pageX, touch.pageY];
-      this.touchStartTimeStamp = event.timeStamp || Date.now();
+      this.touchStartTime = event.timeStamp || Date.now();
     }
     
     document.querySelectorAll('.header')[0].innerHTML = event.type;     
@@ -192,6 +192,51 @@
     return false;
   };
 
+  mScroll.prototype.onTouchEnd = function (event) {
+    var dx = 0;
+    var dy = 0;
+    var onAnimationEnd = null;
+    var momentumY = this.momentumY(event);
+
+    if (Math.abs(momentumY) == 0) {
+      dx = this.snapX();
+      dy = this.snapY();
+    } else {
+      dy = momentumY;
+      onAnimationEnd = function () {
+        var dx = this.snapX();
+        var dy = this.snapY();
+
+        this.animate(dx, dy);
+      }.bind(this);
+    }
+
+    this.animate(dx, dy, onAnimationEnd);
+
+    document.querySelectorAll('.header')[0].innerHTML = event.type;     
+    event.preventDefault(); 
+    return false;
+  };
+
+  mScroll.prototype.snapX = function () {
+    var rootElementWidth = this.rootElementWidth;
+    var snapXThreshold = rootElementWidth * this.snapXThreshold; 
+    var currentPageNo = this.currentPageNo;
+
+    var dx = -(currentPageNo * rootElementWidth) - this.x;
+
+    if (dx >= snapXThreshold) {
+      currentPageNo++;
+    } else if (dx <= -snapXThreshold) {
+      currentPageNo--;
+    }
+
+    this.currentPageNo = currentPageNo;
+
+    dx = -(currentPageNo * rootElementWidth) - this.x;
+
+    return dx;
+  };
 
   mScroll.prototype.snapY = function () {
     var dy = 0;
@@ -215,27 +260,19 @@
     return dy;
   };
 
-  mScroll.prototype.snapX = function () {
-    var rootElementWidth = this.rootElementWidth;
-    var snapXThreshold = rootElementWidth * this.snapXThreshold; 
-    var currentPageNo = this.currentPageNo;
+  mScroll.prototype.momentumY = function (event) {
+    var dy = 0;
+    var duration = (event.timeStamp || Date.now()) - this.touchStartTime;
+    var velocity = (this.touchEnd[1] - this.touchStart[1]) / duration;
 
-    var dx = -(currentPageNo * rootElementWidth) - this.x;
-
-    if (dx >= snapXThreshold) {
-      currentPageNo++;
-    } else if (dx <= -snapXThreshold) {
-      currentPageNo--;
+    if (Math.abs(velocity) > 0.3) {
+      dy = velocity * duration * 1.2;
     }
-
-    this.currentPageNo = currentPageNo;
-
-    dx = -(currentPageNo * rootElementWidth) - this.x;
-
-    return dx;
+    
+    return dy;
   };
 
-  mScroll.prototype.animate = function (dx, dy) {
+  mScroll.prototype.animate = function (dx, dy, onEnd) {
     if (this.animating) {
       console.warn('Animation already running!!!');
       return;
@@ -284,21 +321,11 @@
         cancelAnimationFrame(id);
         that.animating = false;
         that.layout(that.currentPageNo);
+        if (typeof onEnd === 'function') {
+          onEnd();
+        }
       }
     })();
-  };
-
-  mScroll.prototype.onTouchEnd = function (event) {
-    var dx = this.snapX();
-    var dy = this.snapY();
-
-    //console.log('Snap: x', dx, 'y', dy);
-
-    this.animate(dx, dy);
-
-    document.querySelectorAll('.header')[0].innerHTML = event.type;     
-    event.preventDefault(); 
-    return false;
   };
 
   mScroll.prototype.onResize = function (event) {
