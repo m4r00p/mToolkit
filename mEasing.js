@@ -160,19 +160,21 @@ var mEasing = {
     if (time == 0) {
       return start;
     }
+
     if ((time /= duration) == 1) {
       return start + end;
     }
+
     if (!p){
       p = duration * 0.3;
     } 
 
-    if (a < Math.abs(end)) {
-      a = end;
-      damping = p / 4;
-    } else {
-      damping = p / (2 * Math.PI) * Math.asin(end / a);
-    }
+    //if (a < Math.abs(end)) {
+      //a = end;
+      //damping = p / 4;
+    //} else {
+      //damping = p / (2 * Math.PI) * Math.asin(end / a);
+    //}
 
     return a * Math.pow(2, -10 * time) * Math.sin((time * duration - damping) * (2 * Math.PI) / p) + end + start;
   },

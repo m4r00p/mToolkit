@@ -92,82 +92,14 @@
     this.addEventListeners();
   };
 
-
   mScroll.prototype.momentumThreshold = 1000; //ms
   mScroll.prototype.snap = true;
   mScroll.prototype.currentPage = null;
   mScroll.prototype.currentPageNo = 0;
   mScroll.prototype.animating = false;
-
-  mScroll.prototype.animate = function (loop) {
-  };
-
-  mScroll.prototype.animate2 = function () {
-    if (this.animating) {
-      return;
-    }
-
-    this.freezed = false;
-    this.animating = true;
-    var that = this;
-
-    var prev = Date.now();
-    var start = prev;
-    var timestamp = prev;
-
-    var id = null;
-    var dt = 0;
-    var dx = 0;
-    var velocity = 0;
-    var duration = 1000;
-    var steps = [];
-    console.log('animation start');
-
-    (function loop(){
-      id = requestAnimationFrame(loop);
-
-      timestamp = Date.now();
-      dt = timestamp - prev; 
-
-      velocity = that.dx / duration;
-
-      dx = velocity * dt;
-
-      that.dx -= dx;
-      that.scrollX(dx);
-
-      console.log('asdf ' + velocity, dx, that.dx);
-      that.render();
-      prev = timestamp;
-      if (Math.abs(that.dx) < ZERO_EPSILON) {
-        cancelAnimationFrame(id);
-        that.animating = false;
-        console.log('animation end ' + (prev - start) / 1000);
-      }
-    })();
-  };
-
-  mScroll.prototype.integrate = function (dt) {
-    /*
-    var acceleration = 0.98;
-    this.velocityX *= acceleration;
-    var x = this.velocityX * dt;
-    */
-    //this.distanceX 
-    var x = this.velocityX * dt;
-
-    this.distanceX -= x;
-
-    var pages = this.pageElements;
-    for (var i = 0, leni = pages.length, page; i < leni; ++i) {
-      page = pages[i];
-      page.x += x;
-    }
-
-    if (Math.abs(this.distanceX) < 1) {
-      this.freezed = true;
-    }
-  };
+  mScroll.prototype.easingFn = 'easeOutQuint';
+  //mScroll.prototype.easingFn = 'easeOutBounce';
+  //mScroll.prototype.easingFn = 'easeOutElastic';
 
   mScroll.prototype.render = function () {
     var pages = this.pageElements;
@@ -249,13 +181,13 @@
       touch = touches[0];
       
       this.touchMove = [touch.pageX, touch.pageY];
-      var dx = this.touchMove[0] - this.touchEnd[0];
-      var dy = this.touchMove[1] - this.touchEnd[1];
+      var dx = this.touchMove[0] - this.touchStart[0];
+      var dy = this.touchMove[1] - this.touchStart[1];
 
       if (Math.abs(dx) >= Math.abs(dy)) {
-        this.scrollX(dx);
+        this.scrollX(this.touchMove[0] - this.touchEnd[0]);
       } else {
-        this.scrollY(dy);
+        this.scrollY(this.touchMove[1] - this.touchEnd[1]);
       }
 
       this.touchEnd = this.touchMove;
@@ -266,6 +198,28 @@
     return false;
   };
 
+
+  mScroll.prototype.snapY = function () {
+    var dy = 0;
+
+    if (!this.currentPage) {
+      return dy;
+    }
+
+    var rootElementHeight = this.rootElementHeight;
+    var pageHeight = this.currentPage.offsetHeight; 
+    var pageY = -Math.round(this.currentPage.position[1]);
+
+
+    // don't allow moving above top of page
+    if (pageY < 0) {
+      dy = pageY; 
+    } else if (pageHeight < rootElementHeight + pageY) {
+      dy = rootElementHeight + pageY - pageHeight;
+    }
+    
+    return dy;
+  };
 
   mScroll.prototype.snapX = function () {
     var snapThreshold = 0.2; // 20% of page size
@@ -281,10 +235,12 @@
       pageNo = pageNo + 1 * direction;
     } 
 
-    var dx = (-pageNo * this.rootElementWidth) - this.x;
+    this.currentPageNo = pageNo;
 
-    console.log('Snap: ' + dx + ' ' + pageNo);
+    return (-pageNo * this.rootElementWidth) - this.x;
+  };
 
+  mScroll.prototype.animate = function (dx, dy) {
     var id;
     var that = this;
     var duration = 500;
@@ -295,32 +251,48 @@
     var x = 0;
     var x0 = 0;
     var x1 = 0;
+    var y = 0;
+    var y0 = 0;
+    var y1 = 0;
 
-    window.easing = window.easing || 'easeOutQuint';
+    dx = dx || 0;
+    dy = dy || 0;
 
     (function loop(){
       id = requestAnimationFrame(loop);
 
       current = time = Date.now() - start;
 
-      //x1 = mEasing['easeOutQuad'](time, start, end, duration, damping);
-      x1 = mEasing[window.easing](time, 0, dx, duration, damping);
-      x  = x1 - x0;
-      x0 = x1;
-      //console.log(current, time, x);
-      that.scrollX(x);
+      if (Math.abs(dx) > 0) {
+        //x1 = mEasing['easeOutQuad'](time, start, end, duration, damping);
+        x1 = mEasing[that.easingFn](time, 0, dx, duration, damping);
+        x  = x1 - x0;
+        x0 = x1;
+        that.scrollX(x);
+      }
+
+      if (Math.abs(dy) > 0) {
+        y1 = mEasing[that.easingFn](time, 0, dy, duration, damping);
+        y  = y1 - y0;
+        y0 = y1;
+        that.scrollY(y);
+      }
 
       if (current >= duration) {
         cancelAnimationFrame(id);
         that.animating = false;
-        that.layout(pageNo);
-        console.log('animation end ' + (time / 1000));
+        that.layout(that.currentPageNo);
       }
     })();
   };
 
   mScroll.prototype.onTouchEnd = function (event) {
-    this.snapX();
+    var dx = this.snapX();
+    var dy = this.snapY();
+
+    console.log('Snap: x', dx, 'y', dy);
+
+    this.animate(dx, dy);
 
     document.querySelectorAll('.header')[0].innerHTML = event.type;     
     event.preventDefault(); 
