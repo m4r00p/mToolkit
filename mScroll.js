@@ -223,24 +223,33 @@
 
   mScroll.prototype.snapX = function () {
     var snapThreshold = 0.2; // 20% of page size
-    var pageNo = -Math.round(this.x / this.rootElementWidth);
-    var touchDistanceX = this.touchEnd[0] - this.touchStart[0];
-    var direction = 1;
+    var rootElementWidth = this.rootElementWidth;
+    var snapThresholdX = rootElementWidth * snapThreshold; 
+    var currentPageNo = this.currentPageNo;
 
-    if (Math.abs(touchDistanceX) > this.rootElementWidth * snapThreshold) {
-      if (touchDistanceX > 0) {
-        direction = -1;
-      }
+    var dx = -(currentPageNo * rootElementWidth) - this.x;
 
-      pageNo = pageNo + 1 * direction;
-    } 
+    if (dx >= snapThresholdX) {
+      currentPageNo++;
+    } else if (dx <= -snapThresholdX) {
+      currentPageNo--;
+    }
 
-    this.currentPageNo = pageNo;
+    this.currentPageNo = currentPageNo;
 
-    return (-pageNo * this.rootElementWidth) - this.x;
+    dx = -(currentPageNo * rootElementWidth) - this.x;
+
+    return dx;
   };
 
   mScroll.prototype.animate = function (dx, dy) {
+    if (this.animating) {
+      console.warn('Animation already running!!!');
+      return;
+    }
+
+    this.animating = true;
+
     var id;
     var that = this;
     var duration = 500;
