@@ -60,9 +60,11 @@
    */
 
   var tranlateMatrix = function (position) {
-    var tx = position[0] || 0;
-    var ty = position[1] || 0;
-    var tz = position[2] || 0;
+    var tx, ty, tz;
+
+    tx = position[0] || 0;
+    ty = position[1] || 0;
+    tz = position[2] || 0;
 
     return 'matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0,  1, 0, ' + tx + ', ' + ty + ', ' + tz + ', 1)';
   };
@@ -76,27 +78,14 @@
    * For supported devices plz see @link http://caniuse.com/#search=transforms%20
    */
   var mScroll = function (rootElement, options) {
-    //if (!(rootElement instanceof window.Element)) {
-      //throw new Error('rootElement need to be an instance of Element');
-    //}
+    if (!(rootElement instanceof window.Element)) {
+      throw new Error('rootElement need to be an instance of Element');
+    }
 
     this.rootElement = rootElement;
 
     // For support plz see http://caniuse.com/#search=querySelectorAll
     this.pageElements = rootElement.querySelectorAll('.mScrollPage');
-
-    //this.particle = new mPhysics.Particle();
-    //this.particle.position = mPhysics.vec3.create([0, 0, 0]);
-    //this.forceRegistry = new mPhysics.ParticleForceRegistry();
-    //this.particle.velocity = mPhysics.vec3.create([1, 0, 0]);
-    //this.particle.velocity = mPhysics.vec3.create([0.3, 0, 0]); 
-    //this.particle.acceleration = mPhysics.vec3.create([-0.0001, 0, 0]); 
-    //this.forceRegistry.add(this.particle, new mPhysics.ParticleGravity([0.1, 0, 0]));
-    //this.forceRegistry.add(this.particle, new mPhysics.ParticleAnchoredBungee([100, 0, 0], 0.1, 40));
-    //this.forceRegistry.add(this.particle, new mPhysics.ParticleAnchoredSpring([0, 50, 0], 0.1, 40));
-    //this.forceRegistry.add(this.particle, new mPhysics.ParticleAnchoredFakeSpring([100, 0, 0], 0.1, 0.5));
-
-    //this.animate();
 
     this.onResize();
     this.layout();
@@ -199,8 +188,12 @@
     this.currentPageNo = pageNo;
     this.currentPage = pages[pageNo];
 
-    for (var i = 0, leni = pages.length; i < leni; ++i) {
-      pages[i].position = [i* rootWidth - (pageNo * rootWidth), 0, 0];
+    for (var i = 0, leni = pages.length, page; i < leni; ++i) {
+      page = pages[i];
+      if (!page.position) {
+       page.position = [0, 0, 0];
+      }
+      page.position = [i* rootWidth - (pageNo * rootWidth), page.position[1], 0];
     }
 
     this.render();
@@ -294,7 +287,7 @@
 
     var id;
     var that = this;
-    var duration = 2000;
+    var duration = 500;
     var damping = 1.70158;
     var start = Date.now();
     var time = 0;
@@ -303,8 +296,7 @@
     var x0 = 0;
     var x1 = 0;
 
-    //window.easing = window.easing || 'easeOutBounce';
-    window.easing = window.easing || 'easeOutCubic';
+    window.easing = window.easing || 'easeOutQuint';
 
     (function loop(){
       id = requestAnimationFrame(loop);
@@ -321,7 +313,7 @@
       if (current >= duration) {
         cancelAnimationFrame(id);
         that.animating = false;
-        //that.layout(pageNo);
+        that.layout(pageNo);
         console.log('animation end ' + (time / 1000));
       }
     })();

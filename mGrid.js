@@ -18,10 +18,13 @@
     };
   }
   
-  var tranlateMatrix = function (tx, ty, tz) {
-    tx = tx || 0;
-    ty = ty || 0;
-    tz = tz || 0;
+  var tranlateMatrix = function (position) {
+    var tx, ty, tz;
+
+    tx = position[0] || 0;
+    ty = position[1] || 0;
+    tz = position[2] || 0;
+
     return 'matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0,  1, 0, ' + tx + ', ' + ty + ', ' + tz + ', 1)';
   };
 
@@ -71,28 +74,31 @@
     columns = Math.min(columns, this.maxColumnsNumber);
     columnWidth = Math.floor(this.rootElementWidth / Math.min(columns, childsLength));
 
+    // Calculate and apply proper position for each grid item.
     for (index = 0; index < childsLength; ++index) {
       item = childs[index];
 
-      current = grid[index] = {
-        top: 0,
-        left: 0,
-        width: item.offsetWidth,
-        height: item.offsetHeight
-      };
+      current = grid[index] = [
+        0, // x/left
+        0, // y/top
+        0, // z
+        item.offsetWidth, // width
+        item.offsetHeight, // height
+        0 // depth
+      ];
 
       prevColumn = grid[index - columns];
       if (prevColumn) {
-        current.top = prevColumn.top + prevColumn.height + gap;
+        current[1] = prevColumn[1] + prevColumn[4] + gap;
       }
 
       if (column === 1) {
         // >>1 is dividing by 2
-        current.left = (columnWidth>>1) - (current.width>>1);
+        current[0] = (columnWidth>>1) - (current[3]>>1);
       } else {
         prevRow = grid[index - 1];
         if (prevRow) {
-          current.left = prevRow.left + columnWidth;
+          current[0] = prevRow[0] + columnWidth;
         }
       }
 
@@ -101,11 +107,27 @@
         column = 1;
       }
 
-      item.style['-webkit-transform'] = tranlateMatrix(current.left, current.top);
+      item.style['-webkit-transform'] = tranlateMatrix(current);
     }
 
+    // Determine max column height.
+    for (var j = 1, currHeight, maxHeight = -Infinity; j <= columns; ++j) {
+      currHeight = grid[index-j][1] + grid[index-j][4];
+      if (currHeight > maxHeight) {
+        maxHeight = currHeight;
+      }
+    }
+
+    // Add top and bottom gap
+    maxHeight += 2 * gap;
+
+    // Assign proper computed height to grid root element.
+    this.rootElement.style.height = maxHeight + 'px';
   };
 
+  /**
+   * On resize window handler.
+   */
   mGrid.prototype.onResize = function () {
     var rootElement = this.rootElement;
 

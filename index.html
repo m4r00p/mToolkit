@@ -165,6 +165,12 @@
       var grid1 = new mGrid(document.getElementsByClassName('mGrid')[0], { });
       var grid2 = new mGrid(document.getElementsByClassName('mGrid')[1], { });
       var grid3 = new mGrid(document.getElementsByClassName('mGrid')[2], { });
+
+      // reload the page was loaded more than 5s ago
+      var loc = window.location;
+      if (Date.now() - loc.search.replace('?t=', '') > 5000) {
+        loc.href = loc.origin + loc.pathname + '?t=' + Date.now();
+      }
     </script>
   </body>
 </html>
