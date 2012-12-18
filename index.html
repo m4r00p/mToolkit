@@ -12,7 +12,7 @@
 
       <style type="text/css" media="screen">
         .entry-frame {
-          margin: 10px 0 0 10px;
+          margin: 0;
           display: inline-block;
           text-align: left;
           width: 130px;
@@ -88,6 +88,7 @@
           position: relative;
           width: 100%;
           -webkit-perspective: 1000;
+          margin: 10px 0; /** Up to You, if some top/bottom margin is needed. */
         }
         .mGrid > div {
           /** Need to be */
@@ -106,57 +107,7 @@
     </div>
     <div class="content">
       <div class="mScroll">
-        <div class="mScrollPage">
-          <div class="mGrid">
-            <div class="entry-frame"><img src="imgs/1.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/2.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/3.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/4.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/5.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/6.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/7.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/8.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/9.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/10.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/11.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/12.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/3.jpeg" width="100%" alt="adgg" /></div>
-          </div>
-        </div>
-        <div class="mScrollPage">
-          <div class="mGrid">
-            <div class="entry-frame"><img src="imgs/1.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/2.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/3.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/4.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/5.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/6.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/7.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/8.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/9.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/10.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/11.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/12.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/4.jpeg" width="100%" alt="adgg" /></div>
-          </div>
-        </div>
-        <div class="mScrollPage">
-          <div class="mGrid">
-            <div class="entry-frame"><img src="imgs/1.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/2.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/3.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/4.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/5.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/6.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/7.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/8.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/9.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/10.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/11.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/12.jpeg" width="100%" alt="adgg" /></div>
-            <div class="entry-frame"><img src="imgs/5.jpeg" width="100%" alt="adgg" /></div>
-          </div>
-        </div>
+        <!-- Dynamically filled by script down below. -->
       </div>
     </div>
     <script type="text/javascript" charset="utf-8" src="mEasing.js"></script>
@@ -164,17 +115,53 @@
     <script type="text/javascript" charset="utf-8" src="mGrid.js"></script>
     <script type="text/javascript" charset="utf-8" src="mPhysics.js"></script>
     <script type="text/javascript" charset="utf-8">
-      var scroll = new mScroll(document.getElementsByClassName('mScroll')[0], { }); 
+      (function () {
 
-      var grid1 = new mGrid(document.getElementsByClassName('mGrid')[0], { });
-      var grid2 = new mGrid(document.getElementsByClassName('mGrid')[1], { });
-      var grid3 = new mGrid(document.getElementsByClassName('mGrid')[2], { });
+       // reload the page was loaded more than 5s ago
+       var loc = window.location;
+       if (loc.search.indexOf('?t=') != -1 && Date.now() - loc.search.replace('?t=', '') > 5000) {
+         loc.href = loc.origin + loc.pathname + '?t=' + Date.now();
+         return;
+       }
 
-      // reload the page was loaded more than 5s ago
-      var loc = window.location;
-      if (Date.now() - loc.search.replace('?t=', '') > 5000) {
-        loc.href = loc.origin + loc.pathname + '?t=' + Date.now();
-      }
+       var $grid = null;
+       var $page = null;
+       var $scroll = document.getElementsByClassName('mScroll')[0];
+       var $fragment = null;
+
+       var grid = [];
+
+       /**
+        * WARNING!!!
+        * plz watch out on how u fill mScroll if u concatenate html u need to
+        * create mGrid object in separate loop because 
+        * element.innerHTML += '...' something will create new instances 
+        * of previous added content so everything will be broken.
+        */
+
+       for (var i = 0; i < 10; ++i) {
+         $fragment = document.createDocumentFragment();
+
+         $page = document.createElement('div');
+         $page.className = 'mScrollPage'; 
+         $fragment.appendChild($page);
+
+         $grid = document.createElement('div');
+         $grid.className = 'mGrid'; 
+         $page.appendChild($grid);
+
+         for (var j = 0; j < 20; ++j) {
+           $grid.innerHTML += '<div class="entry-frame"><img src="imgs/' + parseInt(1 + Math.random() * 11, 10) + '.jpeg" width="100%" /></div>'; 
+         }
+
+         $scroll.appendChild($fragment);
+         grid.push(new mGrid($grid, { }));
+       }
+
+       var scroll = new mScroll($scroll, { }); 
+
+      }());
+
     </script>
   </body>
 </html>

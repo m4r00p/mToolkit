@@ -29,10 +29,12 @@
   };
 
   var mGrid = function (rootElement, options) {
+    if (!(rootElement instanceof window.Element)) {
+      throw new Error('rootElement need to be an instance of Element');
+    }
     
     this.rootElement = rootElement;
     this.rootElementWidth = rootElement.offsetWidth;
-    this.rootElementHeight = rootElement.offsetHeight;
 
     this.childs = rootElement.children; 
 
@@ -40,13 +42,16 @@
 
     // For support plz see http://caniuse.com/#search=querySelectorAll
     var images = rootElement.querySelectorAll('img');
+    this.imageHandler = this.onResize.bind(this);
     for (var i = 0, leni = images.length; i < leni; ++i) {
-      images[i].onload = this.onResize.bind(this);
-      images[i].onerror = this.onResize.bind(this);
+      images[i].addEventListener('load', this.imageHandler,false);
+      images[i].addEventListener('error', this.imageHandler,false);
     }
 
     window.addEventListener('resize', this.onResize.bind(this), false);
   };
+
+  mGrid.prototype.imageHandler = null;
 
   mGrid.prototype.maxColumnsNumber = 4;
   mGrid.prototype.gap = 10; // px
@@ -70,6 +75,8 @@
     while (((columns+1) * childs[0].offsetWidth) + ((columns) * gap) < this.rootElementWidth) {
       ++columns;
     }
+
+
 
     columns = Math.min(columns, this.maxColumnsNumber);
     columnWidth = Math.floor(this.rootElementWidth / Math.min(columns, childsLength));
@@ -118,9 +125,6 @@
       }
     }
 
-    // Add top and bottom gap
-    maxHeight += 2 * gap;
-
     // Assign proper computed height to grid root element.
     this.rootElement.style.height = maxHeight + 'px';
   };
@@ -128,12 +132,29 @@
   /**
    * On resize window handler.
    */
-  mGrid.prototype.onResize = function () {
-    var rootElement = this.rootElement;
+  mGrid.prototype.onResizeStartTime = 0; 
+  mGrid.prototype.onResizeTimeout = null; 
+  mGrid.prototype.onResize = function (event) {
+    var time = Date.now();
 
-    this.rootElementWidth = rootElement.offsetWidth;
-    this.rootElementHeight = rootElement.offsetHeight;
+    if (event && event.target) {
+      // it means that resize was triggered by image onload/onerror
+      // so cleaning listeners is required
+      event.target.removeEventListener('load', this.imageHandler);
+      event.target.removeEventListener('error', this.imageHandler);
+    }
 
+    if (time - this.onResizeStartTime < 200) {
+      clearTimeout(this.onResizeTimeout); 
+      this.onResizeTimeout = setTimeout(this.onResize.bind(this), 200); // about 2 frames delay
+      this.onResizeStartTime = time;
+      return;
+    }
+
+    console.log('onResize');
+
+    this.onResizeStartTime = time;
+    this.rootElementWidth = this.rootElement.offsetWidth;
     this.layout();
   };
 

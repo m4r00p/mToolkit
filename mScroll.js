@@ -66,7 +66,7 @@
     ty = position[1] || 0;
     tz = position[2] || 0;
 
-    return 'matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0,  1, 0, ' + tx + ', ' + ty + ', ' + tz + ', 1)';
+    return 'matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0,  1, 0, ' + tx.toFixed(1) + ', ' + ty.toFixed(1) + ', ' + tz.toFixed(1) + ', 1)';
   };
 
 
@@ -88,12 +88,12 @@
     this.pageElements = rootElement.querySelectorAll('.mScrollPage');
 
     this.onResize();
-    this.layout();
     this.addEventListeners();
   };
 
   mScroll.prototype.momentumThreshold = 1000; //ms
   mScroll.prototype.snap = true;
+  mScroll.prototype.snapXThreshold = 0.1; // percent of root element width
   mScroll.prototype.currentPage = null;
   mScroll.prototype.currentPageNo = 0;
   mScroll.prototype.animating = false;
@@ -125,7 +125,8 @@
       if (!page.position) {
        page.position = [0, 0, 0];
       }
-      page.position = [i* rootWidth - (pageNo * rootWidth), page.position[1], 0];
+      page.position = [parseInt(i* rootWidth - (pageNo * rootWidth), 10), parseInt(page.position[1], 10), 0];
+      //console.log('layout: ', page.position);
     }
 
     this.render();
@@ -222,16 +223,15 @@
   };
 
   mScroll.prototype.snapX = function () {
-    var snapThreshold = 0.2; // 20% of page size
     var rootElementWidth = this.rootElementWidth;
-    var snapThresholdX = rootElementWidth * snapThreshold; 
+    var snapXThreshold = rootElementWidth * this.snapXThreshold; 
     var currentPageNo = this.currentPageNo;
 
     var dx = -(currentPageNo * rootElementWidth) - this.x;
 
-    if (dx >= snapThresholdX) {
+    if (dx >= snapXThreshold) {
       currentPageNo++;
-    } else if (dx <= -snapThresholdX) {
+    } else if (dx <= -snapXThreshold) {
       currentPageNo--;
     }
 
@@ -299,7 +299,7 @@
     var dx = this.snapX();
     var dy = this.snapY();
 
-    console.log('Snap: x', dx, 'y', dy);
+    //console.log('Snap: x', dx, 'y', dy);
 
     this.animate(dx, dy);
 
@@ -313,6 +313,8 @@
 
     this.rootElementWidth = element.offsetWidth;
     this.rootElementHeight = element.offsetHeight;
+
+    this.layout(this.currentPageNo);
   };
 
   mScroll.prototype.addEventListeners = function () {
