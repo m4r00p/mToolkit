@@ -76,69 +76,137 @@
       throw new Error('rootElement need to be an instance of Element');
     }
 
+    this.options = options;
+
     this.rootElement = rootElement;
 
     // For support plz see http://caniuse.com/#search=querySelectorAll
-    this.pageElements = rootElement.querySelectorAll('.mScrollPage');
+    //this.pageElements = this.rootElement.querySelectorAll('.mScrollPage');
+    this.pageElements = {};
 
-    this.onResize();
     this.addEventListeners();
+    this.refreshDimensions();
+    this.setCurrentPageNo(0);
   };
 
-  mScroll.prototype.momentumThreshold = 1000; //ms
+  mScroll.prototype.momentumYDurationMultiplier = 2; 
   mScroll.prototype.snap = true;
+  mScroll.prototype.snapDuration = 500; // ms
   mScroll.prototype.snapXThreshold = 0.1; // percent of root element width
+  mScroll.prototype.minPage = -Infinity;
+  mScroll.prototype.maxPage = Infinity;
+  mScroll.prototype.pageRangeOffset = 1;
   mScroll.prototype.currentPage = null;
-  mScroll.prototype.currentPageNo = 0;
+  mScroll.prototype.currentPageNo = null;
   mScroll.prototype.animating = false;
-  mScroll.prototype.easingFn = 'easeOutQuint';
-  //mScroll.prototype.easingFn = 'easeOutBounce';
-  //mScroll.prototype.easingFn = 'easeOutElastic';
+  mScroll.prototype.easingFn = mEasing['easeOutQuint']; // linear, easeOutBounce, easeOutElastic... (and about 30 more);
 
-  mScroll.prototype.render = function () {
+  mScroll.prototype.determinePageRange = function (pageNo) {
+    var range = [];
+    var min = Math.max(this.minPage, pageNo - this.pageRangeOffset);
+    var max = Math.min(this.maxPage, pageNo + this.pageRangeOffset);
+
+    for (var i = min; i <= max; ++i) {
+      range[range.length] = i.toString();
+    }
+
+    return range;
+  };
+
+  mScroll.prototype.showPage = function (pageNo) {
     var pages = this.pageElements;
-    var page = null;
+    var range = this.determinePageRange(pageNo);
 
-    for (var i = 0, leni = pages.length; i < leni; ++i) {
-      page = pages[i];
-      page.style['-webkit-transform'] = tranlateMatrix(page.position);
+    this.disposePageOutOfRange(range);
+    this.renderPageInRange(range);
+
+    this.currentPage = pages[pageNo];
+  };
+
+  mScroll.prototype.disposePageOutOfRange = function (range) {
+    var renderedPageRange = Object.keys(this.pageElements);
+    var rootElement = this.rootElement;
+    var options = this.options;
+
+    for (var i = 0, leni = renderedPageRange.length, pageNo; i < leni; ++i) {
+      pageNo = renderedPageRange[i];
+      if (range.indexOf(pageNo) === -1) {
+        rootElement.removeChild(this.pageElements[pageNo]);
+        delete this.pageElements[pageNo];
+        if (options.onDisposePage) {
+          options.onDisposePage(pageNo);
+        }
+      }
     }
   };
 
-  mScroll.prototype.layout = function (pageNo) {
-    pageNo = pageNo || 0;
+  mScroll.prototype.renderPageInRange = function (range) {
+    var renderedPageRange = Object.keys(this.pageElements);
+    var rootElement = this.rootElement;
+    var rootElementWidth = this.rootElementWidth;
+    var options = this.options;
+
+    for (var i = 0, leni = range.length, pageNo, page; i < leni; ++i) {
+      pageNo = range[i];
+      if (renderedPageRange.indexOf(pageNo) === -1) {
+        page = document.createElement('div');
+        page.className = 'mScrollPage'; 
+        rootElement.appendChild(page);
+        this.pageElements[pageNo] = page;
+
+        if (options.onRenderPage) {
+          options.onRenderPage(page, pageNo);
+        }
+      }
+    }
+  };
+
+  //document.querySelectorAll('.header')[0].innerHTML = 'page: ' + pageNo;     
+  mScroll.prototype.setCurrentPageNo = function (pageNo) {
+    if (this.currentPageNo != pageNo) {
+
+      this.currentPageNo = pageNo;
+      this.showPage(pageNo);
+
+      this.layout();
+    } 
+  };
+
+  mScroll.prototype.layout = function () {
+    var pageNo = this.currentPageNo;
     var pages = this.pageElements;
+    var keys = Object.keys(pages);
     var rootWidth = this.rootElementWidth;
 
-    this.x = -pageNo * rootWidth;
-    this.currentPageNo = pageNo;
-    this.currentPage = pages[pageNo];
+    this.x = -this.currentPageNo * rootWidth;
 
-    for (var i = 0, leni = pages.length, page; i < leni; ++i) {
-      page = pages[i];
+    for (var i = 0, leni = keys.length, page; i < leni; ++i) {
+      pageNo = keys[i];
+      page = pages[pageNo];
+
       if (!page.position) {
-       page.position = [0, 0, 0];
+        page.position = [0, 0, 0];
       }
-      page.position = [parseInt(i* rootWidth - (pageNo * rootWidth), 10), parseInt(page.position[1], 10), 0];
-    }
 
-    this.render();
+      page.position = [+(this.x + (pageNo * rootWidth)).toFixed(1), +page.position[1].toFixed(1), 0];
+      page.style['-webkit-transform'] = tranlateMatrix(page.position);
+    }
   };
 
   mScroll.prototype.scrollToPage = function (number) {};
 
   mScroll.prototype.scrollX = function (x) {
     var pages = this.pageElements;
+    var keys = Object.keys(pages);
     var page = null;
 
     this.x += x;
 
-    for (var i = 0, leni = pages.length; i < leni; ++i) {
-      page = pages[i];
+    for (var i = 0, leni = keys.length; i < leni; ++i) {
+      page = pages[keys[i]];
       page.position[0] += x;
+      page.style['-webkit-transform'] = tranlateMatrix(page.position);
     }  
-
-    this.render();
   };
 
   mScroll.prototype.scrollY = function (y) {
@@ -146,10 +214,10 @@
       console.warn('this.currentPage does not exists!!!');
       return;
     }
+    var page = this.currentPage;
 
-    this.currentPage.position[1] += y;
-
-    this.render();
+    page.position[1] += y;
+    page.style['-webkit-transform'] = tranlateMatrix(page.position);
   };
 
   mScroll.prototype.scrollTo = function (position) { };
@@ -163,7 +231,6 @@
       this.touchStartTime = event.timeStamp || Date.now();
     }
     
-    document.querySelectorAll('.header')[0].innerHTML = event.type;     
     event.preventDefault();
     return false;
   };
@@ -187,33 +254,32 @@
       this.touchEnd = this.touchMove;
     }
 
-    document.querySelectorAll('.header')[0].innerHTML = event.type;     
     event.preventDefault();
     return false;
   };
 
+  mScroll.prototype.onSnapAnimationEnd = function (pageNo) {
+    this.setCurrentPageNo(pageNo);
+  };
+
+  mScroll.prototype.onMomentumAnimationEnd = function () {
+    var snapX = this.snapX();
+    var dx = snapX[0];
+    var dy = this.snapY();
+    var pageNo = snapX[1];
+
+    this.animate(dx, dy, this.snapDuration, this.onSnapAnimationEnd.bind(this, pageNo));
+  };
+
+  /**
+   * Touch end event handler.
+   *
+   * It determines if any momentum should be apply to page y-axsis.
+   * And applies snapping after momentum or instead if there is no momenutm.
+   */
   mScroll.prototype.onTouchEnd = function (event) {
-    var dx = 0;
-    var dy = 0;
-    var onAnimationEnd = null;
     var momentumY = this.momentumY(event);
 
-    if (Math.abs(momentumY) == 0) {
-      dx = this.snapX();
-      dy = this.snapY();
-    } else {
-      dy = momentumY;
-      onAnimationEnd = function () {
-        var dx = this.snapX();
-        var dy = this.snapY();
-
-        this.animate(dx, dy);
-      }.bind(this);
-    }
-
-    this.animate(dx, dy, onAnimationEnd);
-
-    document.querySelectorAll('.header')[0].innerHTML = event.type;     
     event.preventDefault(); 
     return false;
   };
@@ -225,17 +291,18 @@
 
     var dx = -(currentPageNo * rootElementWidth) - this.x;
 
-    if (dx >= snapXThreshold) {
+    if (dx >= snapXThreshold && currentPageNo + 1 <= this.maxPage) {
       currentPageNo++;
-    } else if (dx <= -snapXThreshold) {
+    } else if (dx <= -snapXThreshold && currentPageNo - 1 >= this.minPage) {
       currentPageNo--;
     }
 
-    this.currentPageNo = currentPageNo;
+    // Only make sense to recompute dx if currentPageNo was changed
+    if (this.currentPageNo !== currentPageNo) {
+      dx = -(currentPageNo * rootElementWidth) - this.x;
+    }
 
-    dx = -(currentPageNo * rootElementWidth) - this.x;
-
-    return dx;
+    return [dx, currentPageNo];
   };
 
   mScroll.prototype.snapY = function () {
@@ -261,18 +328,34 @@
   };
 
   mScroll.prototype.momentumY = function (event) {
-    var dy = 0;
     var duration = (event.timeStamp || Date.now()) - this.touchStartTime;
-    var velocity = (this.touchEnd[1] - this.touchStart[1]) / duration;
+    var snapY = this.snapY();
+    var dy = 0;
 
-    if (Math.abs(velocity) > 0.3) {
-      dy = velocity * duration * 1.2;
+    if (Math.abs(snapY) == 0 && duration < 300) {
+      var velocity = (this.touchEnd[1] - this.touchStart[1]) / duration;
+      var time = duration * this.momentumYDurationMultiplier; 
+      var abs = Math.abs(velocity);
+      var maxVelocity = 1;
+
+      if (abs > 0.3) {
+        if (abs > maxVelocity) {
+          velocity = velocity > 0 ? maxVelocity : -maxVelocity;
+        }
+        dy = velocity * time;
+      }
     }
-    
+
+    if (Math.abs(dy) > 0) {
+      this.animate(0, dy, time, this.onMomentumAnimationEnd.bind(this), mEasing['easeOutQuad']);
+    } else {
+      this.onMomentumAnimationEnd();
+    }
+
     return dy;
   };
 
-  mScroll.prototype.animate = function (dx, dy, onEnd) {
+  mScroll.prototype.animate = function (dx, dy, duration, onEnd, easingFn) {
     if (this.animating) {
       console.warn('Animation already running!!!');
       return;
@@ -282,7 +365,6 @@
 
     var id;
     var that = this;
-    var duration = 500;
     var damping = 1.70158;
     var start = Date.now();
     var time = 0;
@@ -296,6 +378,8 @@
 
     dx = dx || 0;
     dy = dy || 0;
+    duration = duration || 250;
+    easingFn = easingFn || this.easingFn;
 
     (function loop(){
       id = requestAnimationFrame(loop);
@@ -303,15 +387,14 @@
       current = time = Date.now() - start;
 
       if (Math.abs(dx) > 0) {
-        //x1 = mEasing['easeOutQuad'](time, start, end, duration, damping);
-        x1 = mEasing[that.easingFn](time, 0, dx, duration, damping);
+        x1 = easingFn(time, 0, dx, duration, damping);
         x  = x1 - x0;
         x0 = x1;
         that.scrollX(x);
       }
 
       if (Math.abs(dy) > 0) {
-        y1 = mEasing[that.easingFn](time, 0, dy, duration, damping);
+        y1 = easingFn(time, 0, dy, duration, damping);
         y  = y1 - y0;
         y0 = y1;
         that.scrollY(y);
@@ -320,7 +403,6 @@
       if (current >= duration) {
         cancelAnimationFrame(id);
         that.animating = false;
-        that.layout(that.currentPageNo);
         if (typeof onEnd === 'function') {
           onEnd();
         }
@@ -328,13 +410,16 @@
     })();
   };
 
-  mScroll.prototype.onResize = function (event) {
+  mScroll.prototype.refreshDimensions = function () {
     var element = this.rootElement;
 
     this.rootElementWidth = element.offsetWidth;
     this.rootElementHeight = element.offsetHeight;
+  };
 
-    this.layout(this.currentPageNo);
+  mScroll.prototype.onResize = function (event) {
+    this.refreshDimensions();
+    this.layout();
   };
 
   mScroll.prototype.addEventListeners = function () {
@@ -343,9 +428,13 @@
     element.addEventListener('touchmove', this.onTouchMove.bind(this), false);
     element.addEventListener('touchend', this.onTouchEnd.bind(this), false);
 
-    window.addEventListener('resize', this.onResize.bind(this), false);
+    this.resizeHandler = this.onResize.bind(this);
+    window.addEventListener('resize', this.resizeHandler, false);
   };
 
+  mScroll.prototype.destroy = function () {
+    window.removeEventListener('resize', this.resizeHandler);
+  };
 
   window.mScroll = mScroll;
 

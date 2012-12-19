@@ -42,16 +42,16 @@
 
     // For support plz see http://caniuse.com/#search=querySelectorAll
     var images = rootElement.querySelectorAll('img');
-    this.imageHandler = this.onResize.bind(this);
+    this.resizeHandler = this.onResize.bind(this);
     for (var i = 0, leni = images.length; i < leni; ++i) {
-      images[i].addEventListener('load', this.imageHandler,false);
-      images[i].addEventListener('error', this.imageHandler,false);
+      images[i].addEventListener('load', this.resizeHandler,false);
+      images[i].addEventListener('error', this.resizeHandler,false);
     }
 
-    window.addEventListener('resize', this.onResize.bind(this), false);
+    window.addEventListener('resize', this.resizeHandler, false);
   };
 
-  mGrid.prototype.imageHandler = null;
+  mGrid.prototype.resizeHandler = null;
 
   mGrid.prototype.maxColumnsNumber = 4;
   mGrid.prototype.gap = 10; // px
@@ -140,8 +140,8 @@
     if (event && event.target) {
       // it means that resize was triggered by image onload/onerror
       // so cleaning listeners is required
-      event.target.removeEventListener('load', this.imageHandler);
-      event.target.removeEventListener('error', this.imageHandler);
+      event.target.removeEventListener('load', this.resizeHandler);
+      event.target.removeEventListener('error', this.resizeHandler);
     }
 
     if (time - this.onResizeStartTime < 200) {
@@ -156,6 +156,10 @@
     this.onResizeStartTime = time;
     this.rootElementWidth = this.rootElement.offsetWidth;
     this.layout();
+  };
+
+  mGrid.prototype.destroy = function () {
+    window.removeEventListener('resize', this.resizeHandler);
   };
 
   window.mGrid = mGrid;
