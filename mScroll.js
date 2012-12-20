@@ -102,7 +102,7 @@
   mScroll.prototype.currentPage = null;
   mScroll.prototype.currentPageNo = null;
   mScroll.prototype.animating = false;
-  mScroll.prototype.easingFn = mEasing['easeOutQuint']; // linear, easeOutBounce, easeOutElastic... (and about 30 more);
+  mScroll.prototype.easingFn = mEasing['easeOutQuint']; // linear, easeOutQuint, easeOutBounce, easeOutElastic... (and about 30 more);
 
   mScroll.prototype.createScrollBar = function () {
     var bar = this.scrollBar = document.createElement('div');
@@ -112,25 +112,39 @@
 
     if (this.isDesktop) {
       bar.style.width = '10px';
-      //bar.addEventListener('mousedown', this.onScrollBarMouseDown.bind(this), false);
+      bar.addEventListener('mousedown', this.onScrollBarMouseDown.bind(this), false);
       bar.firstChild.addEventListener('mousedown', this.onScrollBarIndicatorMouseDown.bind(this), false);
     }
   };
 
   mScroll.prototype.onScrollBarMouseDown = function (event) {
     var that = this;
-
+    var offsetY = event.offsetY;
     var pageHeight = this.currentPage.offsetHeight; 
-    var direction = event.offsetY ? 1 : -1;
+    var direction = 0;
+
+    if (offsetY < this.scrollBarTop) {
+      direction = 1;
+    } else if (offsetY > this.scrollBarTop + this.scrollBarHeight) {
+      direction = -1;
+    } else {
+      // mouse down was generated in bounds of indicator.
+      return; 
+    }
     
     var id = setInterval(function () {
-      that.scrollY(0.1 * pageHeight * direction);
-    });
+      if ((direction === 1 && offsetY < that.scrollBarTop + that.scrollBarHeight * 0.5) ||
+        (direction === -1 && offsetY > that.scrollBarTop + that.scrollBarHeight * 0.5)) {
+        that.scrollY(0.03 * pageHeight * direction);
+      } else {
+        onMouseUp();
+      }
+    }, 16);
 
     var onMouseUp = function () {
       clearInterval(id);
-      that.onMomentumAnimationEnd();
       window.removeEventListener('mouseup', onMouseUp, this);
+      that.onMomentumAnimationEnd();
 
       event.preventDefault();
       event.stopPropagation();
@@ -200,14 +214,13 @@
     var height = parseInt(rootElementHeight * rootElementHeight/pageHeight, 10); 
     var top = parseInt(pageY * rootElementHeight / pageHeight, 10);
 
-    if (top < 0) {
+    if (top <= margin) {
       height = height + top;
-      top = 0 + margin;
+      top = margin;
     } else if (top + height + margin >= rootElementHeight) {
-
       height = height + (rootElementHeight - (top + height));
       top -= margin;
-    }
+    } 
 
     this.scrollBarTop = top;
     this.scrollBarHeight = height;
@@ -385,8 +398,10 @@
     var dx = snapX[0];
     var dy = this.snapY();
     var pageNo = snapX[1];
-
-    this.animate(dx, dy, this.snapDuration, this.onSnapAnimationEnd.bind(this, pageNo));
+    
+    if (dx != 0 || dy != 0) {
+      this.animate(dx, dy, this.snapDuration, this.onSnapAnimationEnd.bind(this, pageNo));
+    }
   };
 
   /**
