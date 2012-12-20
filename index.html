@@ -75,31 +75,47 @@
           left: 0;
           /** Can't have: */
           /** height: 100% */
+        }
+
+        .mScrollBar {
+          /** Need to have */
+          position: absolute;
+          width: 5px;
+          height: 100%;
+          top: 0;
+          right: 2px;
+          z-index: 1;
         } 
 
-        /*
-        .mScrollPage:nth-child(odd) {
-          background-color: #fff;
+        .mScrollBar > div {
+          /** Need to have */
+          position: absolute;
+          width: 100%;
+          -webkit-border-radius: 5px;
+          background: rgba(0, 0, 0, 0.5);
         }
-        */
+
+        /**
+         * GRID
+         */
 
         .mGrid {
-          /** Need to be */
+          /** Need to have */
           position: relative;
           width: 100%;
           -webkit-perspective: 1000;
           margin: 10px 0; /** Up to You, if some top/bottom margin is needed. */
         }
+
         .mGrid > div {
-          /** Need to be */
+          /** Need to have */
           position: absolute;
           top: 0;
           left: 0;
         }
 
-        img {
-          display: block;
-        }
+        /** Fix for applying line-height to boxes */
+        img { display: block; }
       </style>
   </head>
   <body>

@@ -84,11 +84,14 @@
     //this.pageElements = this.rootElement.querySelectorAll('.mScrollPage');
     this.pageElements = {};
 
+    this.createScrollBar();
+
     this.addEventListeners();
     this.refreshDimensions();
     this.setCurrentPageNo(0);
   };
 
+  mScroll.prototype.isDesktop = !(/android|iphone|ipad/gi).test(navigator.appVersion);
   mScroll.prototype.momentumYDurationMultiplier = 2; 
   mScroll.prototype.snap = true;
   mScroll.prototype.snapDuration = 500; // ms
@@ -100,6 +103,118 @@
   mScroll.prototype.currentPageNo = null;
   mScroll.prototype.animating = false;
   mScroll.prototype.easingFn = mEasing['easeOutQuint']; // linear, easeOutBounce, easeOutElastic... (and about 30 more);
+
+  mScroll.prototype.createScrollBar = function () {
+    var bar = this.scrollBar = document.createElement('div');
+    bar.className = "mScrollBar";
+    bar.appendChild(document.createElement('div'));
+    this.rootElement.appendChild(bar);
+
+    if (this.isDesktop) {
+      bar.style.width = '10px';
+      //bar.addEventListener('mousedown', this.onScrollBarMouseDown.bind(this), false);
+      bar.firstChild.addEventListener('mousedown', this.onScrollBarIndicatorMouseDown.bind(this), false);
+    }
+  };
+
+  mScroll.prototype.onScrollBarMouseDown = function (event) {
+    var that = this;
+
+    var pageHeight = this.currentPage.offsetHeight; 
+    var direction = event.offsetY ? 1 : -1;
+    
+    var id = setInterval(function () {
+      that.scrollY(0.1 * pageHeight * direction);
+    });
+
+    var onMouseUp = function () {
+      clearInterval(id);
+      that.onMomentumAnimationEnd();
+      window.removeEventListener('mouseup', onMouseUp, this);
+
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
+    };
+
+    window.addEventListener('mouseup', onMouseUp, this);
+
+    event.preventDefault();
+    event.stopPropagation();
+    return false;
+  };
+
+  mScroll.prototype.onScrollBarIndicatorMouseDown = function (event) {
+    var that = this;
+    var rootElementHeight = this.rootElementHeight;
+    var pageHeight = this.currentPage.offsetHeight; 
+
+    this.mouseEnd = [event.pageX, event.pageY];
+
+    var onMouseMove = function (event) {
+      that.mouseMove = [event.pageX, event.pageY];
+      that.scrollY(pageHeight * (that.mouseEnd[1] - that.mouseMove[1]) / rootElementHeight);
+
+      that.mouseEnd = that.mouseMove;
+
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
+    };
+
+    var onMouseUp = function () {
+      that.onMomentumAnimationEnd();
+      window.removeEventListener('mousemove', onMouseMove, this);
+      window.removeEventListener('mouseup', onMouseUp, this);
+
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
+    };
+
+    window.addEventListener('mousemove', onMouseMove, this);
+    window.addEventListener('mouseup', onMouseUp, this);
+
+    event.preventDefault();
+    event.stopPropagation();
+    return false;
+  };
+
+  mScroll.prototype.hideScrollBar = function () {
+    this.scrollBar.style.display = 'none';
+  };
+
+  mScroll.prototype.showScrollBar = function () {
+    this.scrollBar.style.display = 'block';
+  };
+
+  mScroll.prototype.refreshScrollBar = function () {
+    var rootElementHeight = this.rootElementHeight;
+    var pageHeight = this.currentPage.offsetHeight; 
+    var pageY = -Math.round(this.currentPage.position[1]);
+    var style = this.scrollBar.firstChild.style;
+    var bottom = null;
+    var margin = 5;
+
+
+    var height = parseInt(rootElementHeight * rootElementHeight/pageHeight, 10); 
+    var top = parseInt(pageY * rootElementHeight / pageHeight, 10);
+
+    if (top < 0) {
+      height = height + top;
+      top = 0 + margin;
+    } else if (top + height + margin >= rootElementHeight) {
+
+      height = height + (rootElementHeight - (top + height));
+      top -= margin;
+    }
+
+    this.scrollBarTop = top;
+    this.scrollBarHeight = height;
+
+    style.top = top + 'px';
+    style.height = height + 'px';
+  };
 
   mScroll.prototype.determinePageRange = function (pageNo) {
     var range = [];
@@ -169,6 +284,8 @@
       this.showPage(pageNo);
 
       this.layout();
+
+      this.refreshScrollBar();
     } 
   };
 
@@ -218,6 +335,7 @@
 
     page.position[1] += y;
     page.style['-webkit-transform'] = tranlateMatrix(page.position);
+    this.refreshScrollBar();
   };
 
   mScroll.prototype.scrollTo = function (position) { };
