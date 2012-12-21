@@ -92,7 +92,8 @@
   };
 
   mScroll.prototype.isDesktop = !(/android|iphone|ipad/gi).test(navigator.appVersion);
-  mScroll.prototype.momentumYDurationMultiplier = 2; 
+  mScroll.prototype.touchVelocity = [0, 0];
+
   mScroll.prototype.snap = true;
   mScroll.prototype.snapDuration = 500; // ms
   mScroll.prototype.snapXThreshold = 0.1; // percent of root element width
@@ -358,34 +359,96 @@
 
     if (touches.length == 1) {
       touch = touches[0];
-      this.touchStart = this.touchEnd = [touch.pageX, touch.pageY];
-      this.touchStartTime = event.timeStamp || Date.now();
+
+      this.touchMove = [[touch.pageX, touch.pageY, event.timeStamp || Date.now()]];
+
+      if (!this.animating) {
+        this.lockDirection = null;
+      }
+
+      this.stop();
     }
     
     event.preventDefault();
     return false;
   };
 
+  
+
   mScroll.prototype.onTouchMove = function (event) {
-    var touch, touches = event.touches;
+    var dx, dy, touch, touches = event.touches;
+    var touchMove = this.touchMove;
+    var length = touchMove.length;
+    var max = 5;
+
 
     if (touches.length == 1) {
       touch = touches[0];
-      
-      this.touchMove = [touch.pageX, touch.pageY];
-      var dx = this.touchMove[0] - this.touchStart[0];
-      var dy = this.touchMove[1] - this.touchStart[1];
 
-      if (Math.abs(dx) >= Math.abs(dy)) {
-        this.scrollX(this.touchMove[0] - this.touchEnd[0]);
-      } else {
-        this.scrollY(this.touchMove[1] - this.touchEnd[1]);
+      if (length > max) {
+        touchMove.shift();
       }
 
-      this.touchEnd = this.touchMove;
+      length = touchMove.length;
+
+      touchMove[length] = [touch.pageX, touch.pageY, event.timeStamp || Date.now()];
+
+      if (this.lockDirection === null) {
+        dx = touchMove[length][0] - this.touchMove[length - 1][0];
+        dy = touchMove[length][1] - this.touchMove[length - 1][1];
+
+        if (Math.abs(dx) >= Math.abs(dy)) {
+          this.lockDirection = 0; // x
+        } else {
+          this.lockDirection = 1; // y
+        }
+      } else if (this.lockDirection === 0) {
+        this.scrollX(touchMove[length][0] - touchMove[length - 1][0]);
+      } else if (this.lockDirection === 1) {
+        this.scrollY(touchMove[length][1] - touchMove[length - 1][1]);
+      }
     }
 
     event.preventDefault();
+    return false;
+  };
+
+  /**
+   * Touch end event handler.
+   *
+   * It determines if any momentum should be apply to page y-axsis.
+   * And applies snapping after momentum or instead if there is no momenutm.
+   */
+  mScroll.prototype.onTouchEnd = function (event) {
+    //var touchMove = this.touchMove;
+    //var length = touchMove.length; 
+    //var last = touchMove[length - 1];
+    //var first = touchMove[0];
+
+    //if (!last || !first) {
+      //console.warn('Move event missing!!!');
+      //return; 
+    //}
+
+    //var duration = last[2] - first[2];
+    //var maxDelay = 110; // ms
+
+    //this.touchVelocity = [0, 0];
+
+    //if (duration < maxDelay && duration != 0) {
+      //if (this.lockDirection === 0) {
+        //this.touchVelocity[0] = (last[0] - first[0]) / duration;
+      //} else {
+        //this.touchVelocity[1] = (last[1] - first[1]) / duration;
+      //}
+    //}
+
+    //console.log('touchVelocity', duration, this.touchVelocity);
+    console.log('touchVelocity');
+
+    //this.animate2();
+
+    event.preventDefault(); 
     return false;
   };
 
@@ -402,19 +465,6 @@
     if (dx != 0 || dy != 0) {
       this.animate(dx, dy, this.snapDuration, this.onSnapAnimationEnd.bind(this, pageNo));
     }
-  };
-
-  /**
-   * Touch end event handler.
-   *
-   * It determines if any momentum should be apply to page y-axsis.
-   * And applies snapping after momentum or instead if there is no momenutm.
-   */
-  mScroll.prototype.onTouchEnd = function (event) {
-    var momentumY = this.momentumY(event);
-
-    event.preventDefault(); 
-    return false;
   };
 
   mScroll.prototype.snapX = function () {
@@ -461,31 +511,130 @@
   };
 
   mScroll.prototype.momentumY = function (event) {
-    var duration = (event.timeStamp || Date.now()) - this.touchStartTime;
-    var snapY = this.snapY();
-    var dy = 0;
 
-    if (Math.abs(snapY) == 0 && duration < 300) {
-      var velocity = (this.touchEnd[1] - this.touchStart[1]) / duration;
-      var time = duration * this.momentumYDurationMultiplier; 
-      var abs = Math.abs(velocity);
-      var maxVelocity = 1;
+      //if (Math.abs(snapY) == 0 && duration < 300) {
+      //var velocity = () / duration;
+      //var time = duration * this.momentumYDurationMultiplier; 
+      //var abs = Math.abs(velocity);
+      //var maxVelocity = 1;
 
-      if (abs > 0.3) {
-        if (abs > maxVelocity) {
-          velocity = velocity > 0 ? maxVelocity : -maxVelocity;
-        }
-        dy = velocity * time;
-      }
-    }
+      //if (abs > 0.3) {
+        //if (abs > maxVelocity) {
+          //velocity = velocity > 0 ? maxVelocity : -maxVelocity;
+        //}
+        //dy = velocity * time;
+      //}
+    //}
 
-    if (Math.abs(dy) > 0) {
-      this.animate(0, dy, time, this.onMomentumAnimationEnd.bind(this), mEasing['easeOutQuad']);
-    } else {
-      this.onMomentumAnimationEnd();
-    }
+    //if (Math.abs(dy) > 0) {
+      //this.animate(0, dy, time, this.onMomentumAnimationEnd.bind(this), mEasing['easeOutQuad']);
+    //} else {
+      //this.onMomentumAnimationEnd();
+    //}
 
     return dy;
+  };
+
+  mScroll.prototype.animate2 = function (dx, dy, duration, onEnd, easingFn) {
+    if (this.animating) {
+      alert('Animation already running!!!');
+      console.warn('Animation already running!!!');
+      return;
+    }
+    this.animating = true;
+    this.animationId = null;
+
+    var that = this;
+    var now = Date.now();
+    var time = 0;
+    var current = 0;
+    var previous = now - 16; // one frame ago
+    var t = 0;
+    var x = 0;
+    var y = 0;
+    var velocity = that.touchVelocity;
+    var damping = 0.98;
+    var lowestTranslation = 0.1;
+    // snap
+    var page = this.currentPage;
+    var rootHeight = this.rootElementHeight;
+    var pageHeight = page.offsetHeight; 
+    var pageY = -Math.round(page.position[1]);
+    var snapX = 0;
+    var snapY = 0;
+    var snapStartX = false;
+    var snapStartY = false;
+    var snapEndX = true;
+    var snapEndY = true;
+    var snapDuration = 500;
+    var snapStart = 0;
+    var y0 = 0;
+    var y1 = 0;
+
+    easingFn = easingFn || this.easingFn;
+
+
+    (function loop(){
+      that.animationId = requestAnimationFrame(loop);
+
+      // times 
+      now = Date.now();
+      t = now - previous;
+
+      // momentum
+      x = (velocity[0] *= damping) * t; 
+      y = (velocity[1] *= damping) * t; 
+      //y = 0;
+
+      // snap y-axsis
+      //pageY = -Math.round(page.position[1]);
+      //if (pageY < 0) {
+        //if (!snapStartY) {
+          //snapY = pageY;
+          //snapStart = now;
+          //snapStartY = true;
+          //snapEndY = false;
+        //velocity[1] = 0;
+        //}
+      //} else if (pageHeight < rootHeight + pageY) {
+        //if (!snapStartY) {
+          //snapY = rootHeight + pageY - pageHeight;
+          //snapStart = now;
+          //snapStartY = true;
+          //snapEndY = false;
+        //velocity[1] = 0;
+        //}
+      //} else if (snapStartY) {
+        //snapEndY = true;
+      //}
+
+      //if (snapStartY && !snapEndY) {
+        //y1 = easingFn(now - snapStart, 0, snapY, snapDuration, 0);
+        //y += y1 - y0;
+        //y0 = y1;
+      //}
+
+      that.scrollX(x);
+      that.scrollY(y);
+
+      previous = now;
+
+      //console.log('x', x, 'y', y, 'snap', snapY);
+      // end animation condition
+      if (Math.sqrt(x*x + y*y) < 0.1 && (!snapStartY || snapEndY)) {
+        cancelAnimationFrame(that.animationId);
+        that.animating = false;
+        if (typeof onEnd === 'function') {
+          onEnd();
+        }
+      }
+    })();
+  };
+
+  mScroll.prototype.stop = function () {
+    cancelAnimationFrame(this.animationId);
+    this.animating = false;
+    this.touchVelocity = [0, 0];
   };
 
   mScroll.prototype.animate = function (dx, dy, duration, onEnd, easingFn) {
@@ -498,10 +647,10 @@
 
     var id;
     var that = this;
-    var damping = 1.70158;
     var start = Date.now();
     var time = 0;
     var current = 0;
+    var damping = 1.70158;
     var x = 0;
     var x0 = 0;
     var x1 = 0;

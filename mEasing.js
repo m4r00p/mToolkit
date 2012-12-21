@@ -1,9 +1,6 @@
 var mEasing = {
 
-  linear: function (time, start, end, duration, damping) {
-    if (typeof damping === 'undefined') {
-      damping = 1;
-    }
+  linear: function (time, start, end, duration) {
     return (end * (time /= duration)) + start;
   },
 
