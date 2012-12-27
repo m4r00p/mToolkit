@@ -373,14 +373,11 @@
     return false;
   };
 
-  
-
   mScroll.prototype.onTouchMove = function (event) {
     var dx, dy, touch, touches = event.touches;
     var touchMove = this.touchMove;
     var length = touchMove.length;
     var max = 5;
-
 
     if (touches.length == 1) {
       touch = touches[0];
@@ -420,33 +417,34 @@
    * And applies snapping after momentum or instead if there is no momenutm.
    */
   mScroll.prototype.onTouchEnd = function (event) {
-    //var touchMove = this.touchMove;
-    //var length = touchMove.length; 
-    //var last = touchMove[length - 1];
-    //var first = touchMove[0];
+    var touchMove = this.touchMove;
+    var length = touchMove.length; 
+    var last = touchMove[length - 1];
+    //var twoBeforeLast = touchMove[length - 3];
+    var first = touchMove[0];
 
-    //if (!last || !first) {
-      //console.warn('Move event missing!!!');
-      //return; 
-    //}
+    if (!last || !first) {
+      console.warn('Move event missing!!!');
+      return; 
+    }
 
-    //var duration = last[2] - first[2];
-    //var maxDelay = 110; // ms
+    var duration = last[2] - first[2];
+    var maxDelay = 110; // ms
 
-    //this.touchVelocity = [0, 0];
+    this.touchVelocity = [0, 0];
 
-    //if (duration < maxDelay && duration != 0) {
-      //if (this.lockDirection === 0) {
-        //this.touchVelocity[0] = (last[0] - first[0]) / duration;
-      //} else {
-        //this.touchVelocity[1] = (last[1] - first[1]) / duration;
-      //}
-    //}
+    if (duration < maxDelay && duration != 0) {
+      if (this.lockDirection === 0) {
+        this.touchVelocity[0] = (last[0] - first[0]) / duration;
+      } else {
+        this.touchVelocity[1] = (last[1] - first[1]) / duration;
+      }
+    }
 
-    //console.log('touchVelocity', duration, this.touchVelocity);
-    console.log('touchVelocity');
+    console.log('touchVelocity', duration, this.touchVelocity);
+    //console.log('touchVelocity');
 
-    //this.animate2();
+    this.animate2();
 
     event.preventDefault(); 
     return false;
@@ -454,17 +452,6 @@
 
   mScroll.prototype.onSnapAnimationEnd = function (pageNo) {
     this.setCurrentPageNo(pageNo);
-  };
-
-  mScroll.prototype.onMomentumAnimationEnd = function () {
-    var snapX = this.snapX();
-    var dx = snapX[0];
-    var dy = this.snapY();
-    var pageNo = snapX[1];
-    
-    if (dx != 0 || dy != 0) {
-      this.animate(dx, dy, this.snapDuration, this.onSnapAnimationEnd.bind(this, pageNo));
-    }
   };
 
   mScroll.prototype.snapX = function () {
@@ -488,52 +475,7 @@
     return [dx, currentPageNo];
   };
 
-  mScroll.prototype.snapY = function () {
-    var dy = 0;
 
-    if (!this.currentPage) {
-      return dy;
-    }
-
-    var rootElementHeight = this.rootElementHeight;
-    var pageHeight = this.currentPage.offsetHeight; 
-    var pageY = -Math.round(this.currentPage.position[1]);
-
-
-    // don't allow moving above top of page
-    if (pageY < 0) {
-      dy = pageY; 
-    } else if (pageHeight < rootElementHeight + pageY) {
-      dy = rootElementHeight + pageY - pageHeight;
-    }
-    
-    return dy;
-  };
-
-  mScroll.prototype.momentumY = function (event) {
-
-      //if (Math.abs(snapY) == 0 && duration < 300) {
-      //var velocity = () / duration;
-      //var time = duration * this.momentumYDurationMultiplier; 
-      //var abs = Math.abs(velocity);
-      //var maxVelocity = 1;
-
-      //if (abs > 0.3) {
-        //if (abs > maxVelocity) {
-          //velocity = velocity > 0 ? maxVelocity : -maxVelocity;
-        //}
-        //dy = velocity * time;
-      //}
-    //}
-
-    //if (Math.abs(dy) > 0) {
-      //this.animate(0, dy, time, this.onMomentumAnimationEnd.bind(this), mEasing['easeOutQuad']);
-    //} else {
-      //this.onMomentumAnimationEnd();
-    //}
-
-    return dy;
-  };
 
   mScroll.prototype.animate2 = function (dx, dy, duration, onEnd, easingFn) {
     if (this.animating) {
@@ -553,10 +495,12 @@
     var x = 0;
     var y = 0;
     var velocity = that.touchVelocity;
-    var damping = 0.98;
+    var damping = 0.97;
     var lowestTranslation = 0.1;
-    // snap
+    // snap y 
     var page = this.currentPage;
+    var currentPageNo = this.currentPageNo;
+    var rootWidth = this.rootElementWidth;
     var rootHeight = this.rootElementHeight;
     var pageHeight = page.offsetHeight; 
     var pageY = -Math.round(page.position[1]);
@@ -570,6 +514,10 @@
     var snapStart = 0;
     var y0 = 0;
     var y1 = 0;
+    var snapXThreshold = rootWidth * this.snapXThreshold; 
+    var x0 = 0;
+    var x1 = 0;
+
 
     easingFn = easingFn || this.easingFn;
 
@@ -582,46 +530,77 @@
       t = now - previous;
 
       // momentum
-      x = (velocity[0] *= damping) * t; 
-      y = (velocity[1] *= damping) * t; 
-      //y = 0;
+      //x = (velocity[0] *= damping) * t; 
+      //y = (velocity[1] *= damping) * t; 
+      y = 0;
+      x = 0;
 
       // snap y-axsis
-      //pageY = -Math.round(page.position[1]);
-      //if (pageY < 0) {
-        //if (!snapStartY) {
-          //snapY = pageY;
-          //snapStart = now;
-          //snapStartY = true;
-          //snapEndY = false;
-        //velocity[1] = 0;
-        //}
-      //} else if (pageHeight < rootHeight + pageY) {
-        //if (!snapStartY) {
-          //snapY = rootHeight + pageY - pageHeight;
-          //snapStart = now;
-          //snapStartY = true;
-          //snapEndY = false;
-        //velocity[1] = 0;
-        //}
-      //} else if (snapStartY) {
-        //snapEndY = true;
-      //}
+      pageY = -Math.round(page.position[1]);
+      if (pageY < 0) {
+        if (!snapStartY) {
+          snapY = pageY;
+          snapStart = now;
+          snapStartY = true;
+          snapEndY = false;
+        }
+      } else if (pageHeight < rootHeight + pageY) {
+        if (!snapStartY) {
+          snapY = rootHeight + pageY - pageHeight;
+          snapStart = now;
+          snapStartY = true;
+          snapEndY = false;
+        }
+      } else if (snapStartY) {
+        snapEndY = true;
+      }
 
-      //if (snapStartY && !snapEndY) {
-        //y1 = easingFn(now - snapStart, 0, snapY, snapDuration, 0);
-        //y += y1 - y0;
-        //y0 = y1;
-      //}
+      if (snapStartY && !snapEndY) {
+        y1 = easingFn(now - snapStart, 0, snapY, snapDuration, 0);
+        y += y1 - y0;
+        y0 = y1;
+      }
+
+      // snap x-axsis
+      snapX = -(currentPageNo * rootWidth) - that.x;
+      console.log(snapX, currentPageNo, rootWidth, that.x);
+      if (!snapStartX && snapX >= snapXThreshold && currentPageNo + 1 <= that.maxPage) {
+        currentPageNo++;
+      } else if (!snapStartX && snapX <= -snapXThreshold && currentPageNo - 1 >= that.minPage) {
+        currentPageNo--;
+      } else if (snapStartX) {
+        snapEndX = true;
+      }
+
+      if (!snapStartX && that.currentPageNo !== currentPageNo) {
+        snapX = -(currentPageNo * rootWidth) - that.x;
+
+        console.log('asdf');
+        snapStart = now;
+        snapStartX = true;
+        snapEndX = false;
+      }
+
+      if (snapStartX) {
+        console.log('easing');
+        x1 = easingFn(now - snapStart, 0, snapX, snapDuration, 0);
+        x  = x1 - x0;
+        x0 = x1;
+      }
+
+      console.log(now - snapStart > snapDuration);
+
+      //return [dx, currentPageNo];
+
 
       that.scrollX(x);
       that.scrollY(y);
-
       previous = now;
 
       //console.log('x', x, 'y', y, 'snap', snapY);
       // end animation condition
-      if (Math.sqrt(x*x + y*y) < 0.1 && (!snapStartY || snapEndY)) {
+      if ((Math.sqrt(x*x + y*y) < 0.1 && !snapStartX && !snapStartY) || (snapEndX && snapEndY) || now - snapStart > snapDuration) {
+        console.log('animation end');
         cancelAnimationFrame(that.animationId);
         that.animating = false;
         if (typeof onEnd === 'function') {
