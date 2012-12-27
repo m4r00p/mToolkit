@@ -14,7 +14,7 @@
       grid.className = 'mGrid'; 
 
       for (var j = 0; j < 20; ++j) {
-        grid.innerHTML += '<div class="entry-frame"><img src="imgs/' + (+pageNo + 6) + '.jpeg" width="100%" /></div>'; 
+        grid.innerHTML += '<div class="entry-frame"><img src="imgs/' + ((+pageNo + 6)%12) + '.jpeg" width="100%" /></div>'; 
       }
 
       page.appendChild(grid);
