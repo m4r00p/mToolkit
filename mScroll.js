@@ -77,13 +77,10 @@
     }
 
     this.options = options;
-
     this.rootElement = rootElement;
-
     this.pageElements = {};
 
     this.createScrollBar();
-
     this.addEventListeners();
     this.refreshDimensions();
     this.setCurrentPageNo(0);
@@ -125,7 +122,7 @@
       direction = -1;
     } else {
       // mouse down was generated in bounds of indicator.
-      return; 
+      return false; 
     }
     
     var id = setInterval(function () {
@@ -341,13 +338,14 @@
   mScroll.prototype.scrollY = function (y) {
     if (!this.currentPage) {
       console.warn('this.currentPage does not exists!!!');
-      return;
+      return false;
     }
     var page = this.currentPage;
 
     page.position[1] += y;
     page.style['-webkit-transform'] = tranlateMatrix(page.position);
     this.refreshScrollBar();
+    return true;
   };
 
   mScroll.prototype.scrollTo = function (position) { };
@@ -423,7 +421,7 @@
 
     if (!last || !first || !oneBeforeLast) {
       console.warn('Move event missing!!!');
-      return; 
+      return false; 
     }
 
     var duration = last[2] - oneBeforeLast[2];
@@ -490,7 +488,7 @@
   mScroll.prototype.momentum = function () {
     if (this.animating) {
       console.warn('Animation already running!!!');
-      return;
+      return false;
     }
     this.animating = true;
 
@@ -531,6 +529,8 @@
         previous = now;
       }
     })();
+
+    return true;
   };
 
   mScroll.prototype.isSnap = function () {
@@ -547,7 +547,7 @@
   mScroll.prototype.snap = function (options) {
     if (this.animating) {
       console.warn('Animation already running!!!');
-      return;
+      return false;
     }
 
     options = options || {};
