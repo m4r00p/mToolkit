@@ -18,14 +18,20 @@
     };
   }
   
-  var tranlateMatrix = function (position) {
-    var tx, ty, tz;
+  var tranlateMatrix = function (element, position) {
+    var tx, ty, tz, matrix, style = element.style;
 
     tx = position[0] || 0;
     ty = position[1] || 0;
     tz = position[2] || 0;
 
-    return 'matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0,  1, 0, ' + tx + ', ' + ty + ', ' + tz + ', 1)';
+    matrix = 'matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0,  1, 0, ' + tx.toFixed(1) + ', ' + ty.toFixed(1) + ', ' + tz.toFixed(1) + ', 1)';
+
+    style['-webkit-transform'] = matrix;
+    style['-moz-transform'] = matrix;
+    style['-ms-transform'] = matrix;
+    style['-o-transform'] = matrix;
+    style['transform'] = matrix;
   };
 
   var mGrid = function (rootElement, options) {
@@ -114,7 +120,7 @@
         column = 1;
       }
 
-      item.style['-webkit-transform'] = tranlateMatrix(current);
+      tranlateMatrix(item, current);
     }
 
     // Determine max column height.

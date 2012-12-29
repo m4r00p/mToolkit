@@ -56,14 +56,20 @@
    * Helpers
    */
 
-  var tranlateMatrix = function (position) {
-    var tx, ty, tz;
+  var translateMatrix = function (element, position) {
+    var tx, ty, tz, matrix, style = element.style;
 
     tx = position[0] || 0;
     ty = position[1] || 0;
     tz = position[2] || 0;
 
-    return 'matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0,  1, 0, ' + tx.toFixed(1) + ', ' + ty.toFixed(1) + ', ' + tz.toFixed(1) + ', 1)';
+    matrix = 'matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0,  1, 0, ' + tx.toFixed(1) + ', ' + ty.toFixed(1) + ', ' + tz.toFixed(1) + ', 1)';
+
+    style['-webkit-transform'] = matrix;
+    style['-moz-transform'] = matrix;
+    style['-ms-transform'] = matrix;
+    style['-o-transform'] = matrix;
+    style['transform'] = matrix;
   };
 
   /**
@@ -315,7 +321,7 @@
       }
 
       page.position = [+(this.x + (pageNo * rootWidth)).toFixed(1), +page.position[1].toFixed(1), 0];
-      page.style['-webkit-transform'] = tranlateMatrix(page.position);
+      translateMatrix(page, page.position);
     }
   };
 
@@ -331,7 +337,7 @@
     for (var i = 0, leni = keys.length; i < leni; ++i) {
       page = pages[keys[i]];
       page.position[0] += x;
-      page.style['-webkit-transform'] = tranlateMatrix(page.position);
+      translateMatrix(page, page.position);
     }  
   };
 
@@ -343,7 +349,7 @@
     var page = this.currentPage;
 
     page.position[1] += y;
-    page.style['-webkit-transform'] = tranlateMatrix(page.position);
+    translateMatrix(page, page.position);
     this.refreshScrollBar();
     return true;
   };
