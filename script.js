@@ -8,7 +8,7 @@
 
   var $scroll = document.getElementsByClassName('mScroll')[0];
   var grids = {};
-  var scroll = new mScroll($scroll, {
+  var scroll = window.scroll = new mScroll($scroll, {
     onRenderPage: function (page, pageNo) {
       var grid = document.createElement('div');
       grid.className = 'mGrid'; 

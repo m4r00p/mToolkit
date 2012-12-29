@@ -80,8 +80,6 @@
 
     this.rootElement = rootElement;
 
-    // For support plz see http://caniuse.com/#search=querySelectorAll
-    //this.pageElements = this.rootElement.querySelectorAll('.mScrollPage');
     this.pageElements = {};
 
     this.createScrollBar();
@@ -112,8 +110,6 @@
 
     if (this.isDesktop) {
       bar.style.width = '10px';
-      bar.addEventListener('mousedown', this.onScrollBarMouseDown.bind(this), false);
-      bar.firstChild.addEventListener('mousedown', this.onScrollBarIndicatorMouseDown.bind(this), false);
     }
   };
 
@@ -144,7 +140,9 @@
     var onMouseUp = function () {
       clearInterval(id);
       window.removeEventListener('mouseup', onMouseUp, this);
-      that.onMomentumAnimationEnd();
+      if (that.isSnap()) {
+        that.snap();
+      }
 
       event.preventDefault();
       event.stopPropagation();
@@ -177,7 +175,9 @@
     };
 
     var onMouseUp = function () {
-      that.onMomentumAnimationEnd();
+      if (that.isSnap()) {
+        that.snap();
+      }
       window.removeEventListener('mousemove', onMouseMove, this);
       window.removeEventListener('mouseup', onMouseUp, this);
 
@@ -289,7 +289,6 @@
     }
   };
 
-  //document.querySelectorAll('.header')[0].innerHTML = 'page: ' + pageNo;     
   mScroll.prototype.setCurrentPageNo = function (pageNo) {
     if (this.currentPageNo != pageNo) {
 
@@ -446,10 +445,6 @@
     return false;
   };
 
-  mScroll.prototype.onSnapAnimationEnd = function (pageNo) {
-    this.setCurrentPageNo(pageNo);
-  };
-
   mScroll.prototype.snapX = function () {
     var rootElementWidth = this.rootElementWidth;
     var snapXThreshold = rootElementWidth * this.snapXThreshold; 
@@ -549,12 +544,13 @@
     return true;
   };
 
-  mScroll.prototype.snap = function () {
+  mScroll.prototype.snap = function (options) {
     if (this.animating) {
       console.warn('Animation already running!!!');
       return;
     }
-    this.animating = true;
+
+    options = options || {};
 
     var that = this;
     var snapX = this.snapX();
@@ -566,7 +562,7 @@
     var id, x, y, x1, y1;
     var x0 = 0;
     var y0 = 0;
-    var duration = this.snapDuration;
+    var duration = options.duration || this.snapDuration;
     var current, time, start = Date.now();
     var damping = 0;
     var easingFn = this.easingFn;
@@ -574,6 +570,7 @@
     if (dx === 0 && dy === 0) {
       return false;
     } else {
+      this.animating = true;
       (function loop(){
         id = requestAnimationFrame(loop);
 
@@ -622,6 +619,39 @@
     this.layout();
   };
 
+
+  mScroll.prototype.onMouseWheel = function (event) {
+    var that = this;
+    var deltaY = event.wheelDeltaY;
+    var now = event.timeStamp || Date.now();
+    var mouseWheel = this.mouseWheel = this.mouseWheel || [[0, deltaY, now]];
+    var length = mouseWheel.length;
+
+    if (length > 2) {
+      mouseWheel.shift();
+    }
+
+    if (length > 0) {
+      length = mouseWheel.length;
+      var last = mouseWheel[length] = [0, deltaY, now];
+      var oneBeforeLast =mouseWheel[length-1];
+
+      var y = (oneBeforeLast[1] + last[1]) / (last[2] - oneBeforeLast[2]);
+
+      if (!isNaN(y) && isFinite(y)) {
+        this.scrollY(y);
+      }
+
+      clearTimeout(this.mouseWheelTimeoutId); 
+      this.mouseWheelTimeoutId = setTimeout(function () {
+        that.snap();
+      }, 100);  
+    }
+
+    event.preventDefault();
+    return false;
+  };
+
   mScroll.prototype.addEventListeners = function () {
     var element = this.rootElement; 
     element.addEventListener('touchstart', this.onTouchStart.bind(this), false);
@@ -630,6 +660,15 @@
 
     this.resizeHandler = this.onResize.bind(this);
     window.addEventListener('resize', this.resizeHandler, false);
+
+
+    var bar = this.scrollBar;
+    if (this.isDesktop) {
+      bar.addEventListener('mousedown', this.onScrollBarMouseDown.bind(this), false);
+      bar.firstChild.addEventListener('mousedown', this.onScrollBarIndicatorMouseDown.bind(this), false);
+
+      element.addEventListener('mousewheel', this.onMouseWheel.bind(this), false);
+    }
   };
 
   mScroll.prototype.destroy = function () {
