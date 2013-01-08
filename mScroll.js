@@ -86,6 +86,13 @@
     this.rootElement = rootElement;
     this.pageElements = {};
 
+    if (typeof options.minPage != 'undefined') {
+      this.minPage = options.minPage;
+    }
+    if (typeof options.maxPage != 'undefined') {
+      this.maxPage = options.maxPage;
+    }
+
     this.createScrollBar();
     this.addEventListeners();
     this.refreshDimensions();
@@ -94,6 +101,9 @@
 
   mScroll.prototype.isDesktop = !(/android|iphone|ipad/gi).test(navigator.appVersion);
   mScroll.prototype.touchVelocity = [0, 0];
+  mScroll.prototype.momentumX = false;
+  mScroll.prototype.momentumY = true;
+  mScroll.prototype.momentumDamping = 0.9;
 
   mScroll.prototype.snapDuration = 500; // ms
   mScroll.prototype.snapXThreshold = 0.1; // percent of root element width
@@ -262,11 +272,11 @@
     for (var i = 0, leni = renderedPageRange.length, pageNo; i < leni; ++i) {
       pageNo = renderedPageRange[i];
       if (range.indexOf(pageNo) === -1) {
-        rootElement.removeChild(this.pageElements[pageNo]);
-        delete this.pageElements[pageNo];
         if (options.onDisposePage) {
           options.onDisposePage(pageNo);
         }
+        rootElement.removeChild(this.pageElements[pageNo]);
+        delete this.pageElements[pageNo];
       }
     }
   };
@@ -354,10 +364,23 @@
     return true;
   };
 
+  mScroll.prototype.scrollYTop = function () {
+    if (!this.currentPage) {
+      console.warn('this.currentPage does not exists!!!');
+      return false;
+    }
+    var page = this.currentPage;
+
+    page.position[1] = 0;
+    translateMatrix(page, page.position);
+    this.refreshScrollBar();
+    return true;
+  };
+
   mScroll.prototype.scrollTo = function (position) { };
 
   mScroll.prototype.onTouchStart = function (event) {
-    var touch, touches = event.touches;
+    var touch, touches = event.touches, target = event.target;
 
     if (touches.length == 1) {
       touch = touches[0];
@@ -370,9 +393,8 @@
 
       this.stop();
     }
-    
-    event.preventDefault();
-    return false;
+
+    return true;
   };
 
   mScroll.prototype.onTouchMove = function (event) {
@@ -427,7 +449,7 @@
 
     if (!last || !first || !oneBeforeLast) {
       console.warn('Move event missing!!!');
-      return false; 
+      return true; 
     }
 
     var duration = last[2] - oneBeforeLast[2];
@@ -436,9 +458,9 @@
     this.touchVelocity = [0, 0];
 
     if (duration < maxDelay && duration != 0) {
-      if (this.lockDirection === 0) {
+      if (this.lockDirection === 0 && this.momentumX) {
         this.touchVelocity[0] = (last[0] - first[0]) / (last[2] - first[2]);
-      } else {
+      } else if (this.lockDirection === 1 && this.momentumY) {
         this.touchVelocity[1] = (last[1] - first[1]) / (last[2] - first[2]);
       }
     }
@@ -481,10 +503,11 @@
     var pageHeight = this.currentPage.offsetHeight; 
     var pageY = -Math.round(this.currentPage.position[1]);
 
-    // don't allow moving above top of page
-    if (pageY < 0) {
+    if (pageY < 0 || pageHeight < rootElementHeight) {
+      // snap to top page
       dy = pageY; 
     } else if (pageHeight < rootElementHeight + pageY) {
+      // snap to bottom
       dy = rootElementHeight + pageY - pageHeight;
     }
     
@@ -501,7 +524,7 @@
     var that = this;
     var now = Date.now();
     var previous = now - 16; // 1 frame ago
-    var damping = 0.98;
+    var damping = this.momentumDamping;
     var velocity = this.touchVelocity;
     var x, y, t, stepDistance;
     var thresholdDistance = 0.1;
@@ -577,6 +600,11 @@
       return false;
     } else {
       this.animating = true;
+
+      if (this.currentPageNo != pageX) {
+        this.options.onBeforeSnapX && this.options.onBeforeSnapX(this.currentPageNo, pageX);
+      }
+
       (function loop(){
         id = requestAnimationFrame(loop);
 
