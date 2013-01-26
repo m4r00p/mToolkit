@@ -4,7 +4,7 @@
 * Copyright (C) 2007 Ma Bingyao <andot@ujn.edu.cn> 
 * LastModified: Oct 26, 2009 
 * This library is free.  You can redistribute it and/or modify it. 
-* See http://code.google.com/p/jpauclair-blog/source/browse/trunk/Experiment/Base64/src/Main.as
+* See http://code.google.com/p/jpauclair-blog/source/browse/trunk/Experiment/Base64/src/Base64.as
 */   
 package
 {   

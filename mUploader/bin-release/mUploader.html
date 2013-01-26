@@ -52,7 +52,7 @@
             attributes.align = "middle";
             swfobject.embedSWF(
                 "mUploader.swf", "flashContent", 
-                "300", "200", 
+                "265", "50", 
                 swfVersionStr, xiSwfUrlStr, 
                 flashvars, params, attributes);
             // JavaScript enabled so display the flashContent div in case it is not replaced with a swf object.
@@ -74,17 +74,79 @@
                 document.write("<a href='http://www.adobe.com/go/getflashplayer'><img src='" 
                                 + pageHost + "www.adobe.com/images/shared/download_buttons/get_flash_player.gif' alt='Get Adobe Flash player' /></a>" ); 
             </script> 
-        </div>
+          </div>
+<script type="text/javascript" charset="utf-8">
+window.onload = function () {
+  function receiveSwfMessage(name, message) {
+    console.log('message', name, message);
+    if (name === 'completeLoad') {
+      var img = new Image();
+      img.src = message;
+      document.body.appendChild(img);
+    }
+  }
+
+  // Gets a reference to the specified SWF file by checking which browser is
+  // being used and using the appropriate JavaScript.
+  // Unfortunately, newer approaches such as using getElementByID() don't
+  // work well with Flash Player/ExternalInterface.
+  function getSwf(movieName) {
+    if (navigator.appName.indexOf("Microsoft") != -1) {
+      return window[movieName];
+    } else {
+      return document[movieName];
+    }
+  }
+
+  function sendSwfMessage(name, json) {
+    getSwf('mUploader').sendSwfMessage(name, json);
+  }
+
+  window.receiveSwfMessage = receiveSwfMessage;
+
+  var json = {
+    "url": "http://dyndns.pawlowski.it:8080/Workspace/roxy-girl/app/upload/upload.php",
+    "postData": {
+      "domain": "test.sociofabri.ca",
+      "userid": 1,
+      "groupName": "''",
+      "title": "''",
+      "caption": "''",
+      "contestid": 4
+    },
+    "filter": {
+      "name": "Images",
+      "extension": "*.jpg;*jpeg;*.gif;*.png"
+    },
+    "outputImage": {
+      "quality": 90,
+      "width": 138
+    },
+    "uploadDataFieldName": "file",
+    "button": {
+      "url": "btn-upload-ie.jpg",
+      "width": 265,
+      "height": 50
+    }
+  };
+
+  sendSwfMessage('config', JSON.stringify(json));
+  //sendSwfMessage('url', '{"value": "http://dyndns.pawlowski.it:8080/Workspace/roxy-girl/app/upload/upload.php"}');
+  //sendSwfMessage('post', JSON.stringify(json));
+  //sendSwfMessage('uploadDataFieldName', '{"value": "file"}');
+  //sendSwfMessage('button', '{"url": "btn-upload-ie.png", "width": 265, "height": 5  0}');
+};
+</script>
         
         <noscript>
-            <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="300" height="200" id="mUploader">
+            <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="265" height="50" id="mUploader">
                 <param name="movie" value="mUploader.swf" />
                 <param name="quality" value="high" />
                 <param name="bgcolor" value="#ffffff" />
                 <param name="allowScriptAccess" value="sameDomain" />
                 <param name="allowFullScreen" value="true" />
                 <!--[if !IE]>-->
-                <object type="application/x-shockwave-flash" data="mUploader.swf" width="300" height="200">
+                <object type="application/x-shockwave-flash" data="mUploader.swf" width="265" height="50">
                     <param name="quality" value="high" />
                     <param name="bgcolor" value="#ffffff" />
                     <param name="allowScriptAccess" value="sameDomain" />
